@@ -1,0 +1,1656 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Centinela";
+}
+
+@section Metatags {
+    <link rel="stylesheet" href="~/assets/css/animated.css" />
+
+    <style>
+        /* La página no usa la barra superior del master */
+        #kt_app_toolbar {
+            display: none !important;
+        }
+    </style>
+
+    <!--begin::Videowall-->
+    <style>
+        /* ---------- Tokens locales (respetan claro/oscuro de Metronic) ---------- */
+        :root {
+            --vp-gap: 14px;
+            --vp-radio: 14px;
+            --vp-video-bg: #0d0d16;
+            --vp-panel-bg: var(--bs-body-bg);
+            --vp-panel-borde: var(--bs-border-color);
+            --vp-sombra: 0 1px 2px rgba(20, 20, 31, 0.06), 0 8px 24px rgba(20, 20, 31, 0.05);
+            --vp-acento: var(--bs-primary);
+            --vp-lateral-ancho: 320px;
+            /* Alto de la tira de cámaras pequeñas de la vista previa */
+            --vp-tira-alto: clamp(84px, 19vh, 170px);
+            /* Tope de alto del listado lateral */
+            --vp-lista-alto: clamp(180px, 36vh, 380px);
+        }
+
+        [data-bs-theme="dark"] {
+            --vp-video-bg: #08080f;
+            --vp-sombra: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #kt_app_root,
+        #kt_app_page,
+        #kt_app_wrapper,
+        #kt_app_main,
+        #kt_app_main > .flex-column-fluid,
+        #kt_app_content,
+        #kt_app_content_container {
+            height: 100%;
+            min-height: 0;
+        }
+
+        #kt_app_main {
+            margin: 0 !important;
+        }
+
+        #kt_app_content_container {
+            display: flex;
+            flex-direction: column;
+            padding: 12px !important;
+        }
+
+        /* ---------- Estructura general ---------- */
+        .vp-layout {
+            display: flex;
+            gap: var(--vp-gap);
+            height: 100%;
+            min-height: 0;
+        }
+
+        .vp-principal {
+            flex: 1 1 auto;
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: var(--vp-gap);
+        }
+
+        .vp-lateral {
+            flex: 0 0 var(--vp-lateral-ancho);
+            width: var(--vp-lateral-ancho);
+            display: flex;
+            flex-direction: column;
+            gap: var(--vp-gap);
+            min-height: 0;
+        }
+
+        /* ---------- Tarjeta genérica ---------- */
+        .vp-panel {
+            background-color: var(--vp-panel-bg);
+            border: 1px solid var(--vp-panel-borde);
+            border-radius: var(--vp-radio);
+            box-shadow: var(--vp-sombra);
+            overflow: hidden;
+        }
+
+        .vp-panel-encabezado {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.7rem 0.9rem;
+        }
+
+        .vp-panel-titulo {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--bs-gray-500);
+            margin: 0;
+        }
+
+        /* ---------- Visor ---------- */
+        .vp-visor {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: grid;
+            gap: var(--vp-gap);
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr;
+        }
+
+            .vp-visor[data-vista="unica"] .vp-celda {
+                display: none;
+            }
+
+                .vp-visor[data-vista="unica"] .vp-celda.seleccionada {
+                    display: block;
+                }
+
+            .vp-visor[data-vista="previa"] {
+                grid-template-columns: repeat(var(--vp-tira, 1), minmax(0, 1fr));
+                grid-template-rows: 1fr var(--vp-tira-alto);
+                gap: 0;
+                overflow: hidden;
+                border: 2px solid var(--vp-panel-borde);
+                border-radius: var(--vp-radio);
+                box-shadow: var(--vp-sombra);
+            }
+
+                .vp-visor[data-vista="previa"] .vp-celda {
+                    grid-row: 2;
+                    border-radius: 0;
+                    box-shadow: none;
+                    border-color: transparent;
+                }
+
+                .vp-visor[data-vista="previa"] .vp-celda.seleccionada {
+                    grid-row: 1;
+                    grid-column: 1 / -1;
+                }
+
+        .vp-celda {
+            position: relative;
+            overflow: hidden;
+            min-width: 0;
+            min-height: 0;
+            border-radius: var(--vp-radio);
+            background-color: var(--vp-video-bg);
+            border: 2px solid var(--vp-panel-borde);
+            box-shadow: var(--vp-sombra);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+            .vp-celda video-stream {
+                position: absolute;
+                inset: 0;
+                display: block;
+                background-color: var(--vp-video-bg);
+            }
+
+                .vp-celda video-stream video {
+                    width: 100%;
+                    height: 100%;
+                    display: block;
+                }
+
+                .vp-celda video-stream .info {
+                    display: none !important;
+                }
+
+            .vp-celda video::-webkit-media-controls {
+                display: none !important;
+            }
+
+        .vp-celda-capa {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+
+        .vp-visor[data-vista="previa"] .vp-celda-capa {
+            cursor: pointer;
+        }
+
+        .vp-visor[data-vista="previa"] .vp-celda:not(.seleccionada):hover {
+            border-color: rgba(var(--bs-primary-rgb), 0.45);
+        }
+
+        .vp-visor[data-vista="previa"] .vp-celda:not(.seleccionada) .vp-celda-barra {
+            padding: 1.9rem 0.7rem 0.6rem;
+        }
+
+        .vp-visor[data-vista="previa"] .vp-celda:not(.seleccionada) .vp-celda-nombre {
+            font-size: 0.8125rem;
+        }
+
+        .vp-visor[data-vista="previa"] .vp-celda:not(.seleccionada) .vp-celda-num {
+            width: 22px;
+            height: 22px;
+            font-size: 0.75rem;
+        }
+
+        .vp-visor[data-vista="previa"] .vp-celda:not(.seleccionada) .vp-celda-acciones {
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .vp-visor[data-vista="previa"] .vp-celda:not(.seleccionada):hover .vp-celda-acciones {
+            opacity: 1;
+        }
+
+        .vp-celda:fullscreen {
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .vp-celda.vp-capturando::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+            background-color: #ffffff;
+            animation: vp-destello 0.35s ease-out;
+        }
+
+        @@keyframes vp-destello {
+            from { opacity: 0.28; }
+            to { opacity: 0; }
+        }
+
+        .vp-celda-vacia {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: rgba(255, 255, 255, 0.28);
+            pointer-events: none;
+        }
+
+        .vp-celda-barra {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 2.5rem 1rem 0.85rem;
+            pointer-events: none;
+            background: linear-gradient(0deg, rgba(8, 8, 15, 0.88) 0%, rgba(8, 8, 15, 0.72) 30%, rgba(8, 8, 15, 0.38) 62%, rgba(8, 8, 15, 0.12) 84%, rgba(8, 8, 15, 0) 100%);
+        }
+
+        .vp-celda-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .vp-celda-nombre {
+            color: #ffffff;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            text-shadow: 0 1px 3px rgba(8, 8, 15, 0.6);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .vp-celda-acciones {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            pointer-events: auto;
+        }
+
+        .vp-celda-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border: 0;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            transition: background-color 0.15s ease;
+        }
+
+            .vp-celda-btn:hover {
+                background-color: rgba(255, 255, 255, 0.24);
+            }
+
+        .vp-celda-volumen {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .vp-celda-volumen-barra {
+            width: 0;
+            opacity: 0;
+            margin: 0;
+            padding: 0;
+            cursor: pointer;
+            accent-color: var(--vp-acento);
+            transition: width 0.15s ease, opacity 0.15s ease;
+        }
+
+        .vp-celda-volumen:hover .vp-celda-volumen-barra,
+        .vp-celda-volumen:focus-within .vp-celda-volumen-barra {
+            width: 72px;
+            opacity: 1;
+        }
+
+        .vp-celda[data-audio="false"] .vp-celda-volumen {
+            display: none;
+        }
+
+        .vp-vivo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            background-color: rgba(241, 65, 108, 0.18);
+            border: 1px solid rgba(241, 65, 108, 0.45);
+            color: #ff7096;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+            .vp-vivo[data-estado="conectando"],
+            .vp-vivo[data-estado="cargando"] {
+                background-color: rgba(var(--bs-warning-rgb), 0.18);
+                border-color: rgba(var(--bs-warning-rgb), 0.5);
+                color: var(--bs-warning);
+            }
+
+            .vp-vivo[data-estado="pausado"],
+            .vp-vivo[data-estado="detenido"] {
+                background-color: rgba(255, 255, 255, 0.12);
+                border-color: rgba(255, 255, 255, 0.35);
+                color: rgba(255, 255, 255, 0.8);
+            }
+
+            .vp-vivo[data-estado="error"] {
+                background-color: rgba(var(--bs-danger-rgb), 0.9);
+                border-color: rgba(var(--bs-danger-rgb), 0.9);
+                color: #ffffff;
+            }
+
+        /* ---------- Conmutador de vista ---------- */
+        .vp-vista-toggle {
+            display: inline-flex;
+            gap: 2px;
+            padding: 2px;
+            border: 1px solid var(--vp-panel-borde);
+            border-radius: 9px;
+            background-color: var(--bs-gray-100);
+        }
+
+        .vp-vista-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 24px;
+            border: 0;
+            border-radius: 7px;
+            background-color: transparent;
+            color: var(--bs-gray-600);
+            font-size: 0.75rem;
+            transition: background-color 0.12s ease, color 0.12s ease;
+        }
+
+            .vp-vista-btn:hover {
+                color: var(--vp-acento);
+            }
+
+            .vp-vista-btn.activo {
+                background-color: var(--vp-panel-bg);
+                color: var(--vp-acento);
+                box-shadow: 0 1px 2px rgba(20, 20, 31, 0.12);
+            }
+
+        /* ---------- Listado lateral de cámaras ---------- */
+        .vp-lista {
+            display: flex;
+            flex-direction: column;
+            flex: 0 1 auto;
+            max-height: var(--vp-lista-alto);
+            min-height: 0;
+        }
+
+        .vp-lista-cuerpo {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            padding: 0 0.6rem 0.6rem;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .vp-item {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            width: 100%;
+            padding: 0.55rem 0.6rem;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background-color: transparent;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+            .vp-item:hover {
+                background-color: var(--bs-gray-100);
+            }
+
+            .vp-item.activo {
+                background-color: rgba(var(--bs-primary-rgb), 0.08);
+                border-color: rgba(var(--bs-primary-rgb), 0.35);
+            }
+
+        .vp-item-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+            border-radius: 99px;
+            background-color: var(--bs-gray-200);
+            color: var(--bs-gray-700);
+            font-size: 0.875rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .vp-item.activo .vp-item-num {
+            background-color: var(--vp-acento);
+            color: #ffffff;
+        }
+
+        .vp-item-texto {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .vp-item-nombre {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--bs-gray-900);
+            line-height: 1.25;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .vp-item-estado {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.6875rem;
+            color: var(--bs-gray-500);
+            line-height: 1.25;
+        }
+
+            .vp-item-estado::before {
+                content: "";
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background-color: currentColor;
+                flex-shrink: 0;
+            }
+
+            .vp-item-estado[data-estado="vivo"] { color: var(--bs-success); }
+            .vp-item-estado[data-estado="conectando"],
+            .vp-item-estado[data-estado="cargando"] { color: var(--bs-warning); }
+            .vp-item-estado[data-estado="error"] { color: var(--bs-danger); }
+
+        .vp-chip-ptz {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            flex-shrink: 0;
+            padding: 0.1rem 0.4rem;
+            border: 1px solid var(--vp-panel-borde);
+            border-radius: 6px;
+            color: var(--bs-gray-600);
+            font-size: 0.625rem;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            line-height: 1.5;
+        }
+
+        .vp-item.activo .vp-chip-ptz {
+            border-color: rgba(var(--bs-primary-rgb), 0.4);
+            color: var(--vp-acento);
+        }
+
+        .vp-item[data-ptz="false"] .vp-chip-ptz {
+            display: none;
+        }
+
+        .vp-item-config {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            flex-shrink: 0;
+            border: 0;
+            border-radius: 7px;
+            background-color: transparent;
+            color: var(--bs-gray-500);
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+            .vp-item-config:hover {
+                background-color: var(--bs-gray-200);
+                color: var(--vp-acento);
+            }
+
+        /* ---------- Controles PTZ ---------- */
+        .vp-controles {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .vp-seccion-cuerpo {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            padding: 0 1rem 1rem;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .vp-seccion-columna {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            min-width: 0;
+        }
+
+            .vp-seccion-columna + .vp-seccion-columna {
+                padding-top: 0.9rem;
+                border-top: 1px dashed var(--vp-panel-borde);
+            }
+
+        .vp-seccion-subtitulo {
+            font-size: 0.625rem;
+            font-weight: 700;
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+            color: var(--bs-gray-500);
+        }
+
+        .vp-ptz-objetivo {
+            display: inline-flex;
+            min-width: 0;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            background-color: rgba(var(--bs-primary-rgb), 0.1);
+            color: var(--vp-acento);
+            font-size: 0.6875rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+            .vp-ptz-objetivo > span {
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .vp-ptz-objetivo i { flex-shrink: 0; }
+
+        .vp-dpad {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            width: 100%;
+            max-width: 168px;
+            margin-inline: auto;
+        }
+
+            .vp-dpad .vp-btn-control {
+                aspect-ratio: 1;
+            }
+
+        .vp-btn-control {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            border: 1px solid var(--vp-panel-borde);
+            border-radius: 9px;
+            background-color: var(--bs-gray-100);
+            color: var(--bs-gray-700);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0;
+            transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+        }
+
+            .vp-btn-control:hover:not(.vp-dpad-centro),
+            .vp-btn-control:hover:not(.vp-dpad-centro) i,
+            .vp-btn-control:hover:not(.vp-dpad-centro) svg {
+                background-color: var(--vp-acento);
+                border-color: var(--vp-acento);
+                color: #ffffff;
+                fill: currentColor;
+            }
+
+            .vp-btn-control:active {
+                transform: scale(0.94);
+            }
+
+            .vp-btn-control.vp-dpad-centro {
+                background-color: transparent;
+                border-style: dashed;
+            }
+
+                .vp-btn-control.vp-dpad-centro:hover {
+                    border-color: var(--vp-acento);
+                }
+
+        .vp-ptz-pares {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.5rem;
+        }
+
+        .vp-ptz-par {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 4px;
+        }
+
+        .vp-ptz-par-nombre {
+            grid-column: 1 / -1;
+            text-align: center;
+            font-size: 0.625rem;
+            font-weight: 600;
+            color: var(--bs-gray-600);
+        }
+
+        .vp-ptz-par .vp-btn-control {
+            min-width: 0;
+            height: 30px;
+        }
+
+        .vp-ptz-etiqueta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--bs-gray-500);
+        }
+
+        .vp-ptz-velocidad input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 16px;
+            margin: 0;
+            background: transparent;
+            cursor: pointer;
+        }
+
+            .vp-ptz-velocidad input[type="range"]::-webkit-slider-runnable-track {
+                height: 6px;
+                border-radius: 999px;
+                background: linear-gradient(to right, var(--vp-acento) 0 var(--vp-relleno, 50%), var(--vp-panel-borde) var(--vp-relleno, 50%) 100%);
+            }
+
+            .vp-ptz-velocidad input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 14px;
+                height: 14px;
+                margin-top: -4px;
+                border: 0;
+                border-radius: 50%;
+                background-color: var(--vp-acento);
+            }
+
+            .vp-ptz-velocidad input[type="range"]::-moz-range-track {
+                height: 6px;
+                border-radius: 999px;
+                background-color: var(--vp-panel-borde);
+            }
+
+            .vp-ptz-velocidad input[type="range"]::-moz-range-progress {
+                height: 6px;
+                border-radius: 999px;
+                background-color: var(--vp-acento);
+            }
+
+            .vp-ptz-velocidad input[type="range"]::-moz-range-thumb {
+                width: 14px;
+                height: 14px;
+                border: 0;
+                border-radius: 50%;
+                background-color: var(--vp-acento);
+            }
+
+        .vp-funciones {
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .vp-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            height: 32px;
+            padding: 0 0.55rem;
+            border: 1px solid var(--vp-panel-borde);
+            border-radius: 8px;
+            background-color: var(--bs-gray-100);
+            color: var(--bs-gray-700);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+        }
+
+            .vp-toggle:hover,
+            .vp-toggle:hover i,
+            .vp-toggle:hover svg {
+                border-color: var(--vp-acento);
+                color: var(--vp-acento);
+                fill: currentColor;
+            }
+
+            .vp-toggle.activo {
+                background-color: rgba(var(--bs-success-rgb), 0.12);
+                border-color: rgba(var(--bs-success-rgb), 0.45);
+                color: var(--bs-success);
+            }
+
+            .vp-toggle i { flex-shrink: 0; }
+
+        .vp-controles[data-disponible="false"] .vp-seccion-columna {
+            opacity: 0.3;
+            pointer-events: none;
+            filter: grayscale(1);
+        }
+
+        .vp-seccion-aviso {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            display: none;
+            align-items: center;
+            pointer-events: none;
+            gap: 0.5rem;
+            max-width: calc(100% - 2rem);
+            padding: 0.6rem 0.85rem;
+            border: 1px dashed var(--vp-panel-borde);
+            border-radius: 9px;
+            background-color: var(--vp-panel-bg);
+            box-shadow: var(--vp-sombra);
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--bs-gray-700);
+        }
+
+        .vp-controles[data-disponible="false"] .vp-seccion-aviso {
+            display: flex;
+        }
+
+        .vp-ptz-badge {
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.625rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            background-color: rgba(var(--bs-success-rgb), 0.12);
+            color: var(--bs-success);
+            flex-shrink: 0;
+        }
+
+        .vp-controles[data-disponible="false"] .vp-ptz-badge {
+            background-color: var(--bs-gray-200);
+            color: var(--bs-gray-500);
+        }
+
+        @@media (max-width: 1500px) {
+            :root {
+                --vp-lateral-ancho: 270px;
+            }
+
+            .vp-dpad {
+                grid-template-columns: repeat(3, 34px);
+                grid-template-rows: repeat(3, 34px);
+            }
+
+            .vp-seccion-cuerpo {
+                gap: 0.7rem;
+            }
+
+                .vp-seccion-cuerpo .vp-seccion-columna + .vp-seccion-columna {
+                    padding-top: 0.7rem;
+                }
+        }
+    </style>
+    <!--end::Videowall-->
+}
+
+<div class="vp-layout">
+    <!--begin::Columna principal-->
+    <div class="vp-principal">
+        <div class="vp-visor" id="visor" data-vista="unica"></div>
+    </div>
+    <!--end::Columna principal-->
+
+    <!--begin::Lateral: listado de cámaras-->
+    <aside class="vp-lateral">
+        <div class="vp-panel vp-lista">
+            <div class="vp-panel-encabezado">
+                <h4 class="vp-panel-titulo">Cámaras</h4>
+
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <div class="vp-vista-toggle" id="vista-toggle">
+                        <button type="button" class="vp-vista-btn activo" data-vista="unica" title="Ver una cámara">
+                            <i class="fas fa-square"></i>
+                        </button>
+                        <button type="button" class="vp-vista-btn" data-vista="previa" title="Ver todas las cámaras">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                    </div>
+
+                    <button type="button" onclick="ReiniciarCamaras(this);"
+                            class="btn btn-sm btn-icon btn-bg-light btn-color-gray-600 btn-active-color-primary w-30px h-30px"
+                            title="Reiniciar cámaras">
+                        <i class="ki-outline ki-arrows-circle fs-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="vp-lista-cuerpo" id="lista-camaras"></div>
+        </div>
+
+        <!--begin::Controles PTZ-->
+        <div class="vp-panel vp-controles" id="panel-controles" data-disponible="true">
+            <div class="vp-panel-encabezado">
+                <h4 class="vp-panel-titulo">PTZ</h4>
+                <span class="vp-ptz-objetivo">
+                    <i class="ki-outline ki-screen fs-8"></i>
+                    <span id="ptz-objetivo-nombre">Cámara 1 · Frontal</span>
+                </span>
+                <span class="vp-ptz-badge ms-auto" id="ptz-estado">Disponible</span>
+            </div>
+
+            <div class="vp-seccion-aviso">
+                <i class="ki-outline ki-information-2 fs-5"></i>
+                <span>Esta cámara no cuenta con control PTZ.</span>
+            </div>
+
+            <div class="vp-seccion-cuerpo">
+                <!--begin::Movimiento-->
+                <div class="vp-seccion-columna">
+                    <span class="vp-seccion-subtitulo">Movimiento</span>
+                    <div class="vp-dpad">
+                        <button type="button" class="vp-btn-control" data-ptz-accion="arriba-izquierda" title="Arriba / izquierda">
+                            <i class="fas fa-chevron-up" style="transform: rotate(-45deg);"></i>
+                        </button>
+                        <button type="button" class="vp-btn-control" data-ptz-accion="arriba" title="Arriba">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                        <button type="button" class="vp-btn-control" data-ptz-accion="arriba-derecha" title="Arriba / derecha">
+                            <i class="fas fa-chevron-up" style="transform: rotate(45deg);"></i>
+                        </button>
+
+                        <button type="button" class="vp-btn-control" data-ptz-accion="izquierda" title="Izquierda">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button type="button" class="vp-btn-control vp-dpad-centro" data-ptz-accion="stop" title="Detener movimiento">
+                            <i class="far fa-stop-circle fs-5"></i>
+                        </button>
+                        <button type="button" class="vp-btn-control" data-ptz-accion="derecha" title="Derecha">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+
+                        <button type="button" class="vp-btn-control" data-ptz-accion="abajo-izquierda" title="Abajo / izquierda">
+                            <i class="fas fa-chevron-down" style="transform: rotate(45deg);"></i>
+                        </button>
+                        <button type="button" class="vp-btn-control" data-ptz-accion="abajo" title="Abajo">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <button type="button" class="vp-btn-control" data-ptz-accion="abajo-derecha" title="Abajo / derecha">
+                            <i class="fas fa-chevron-down" style="transform: rotate(-45deg);"></i>
+                        </button>
+                    </div>
+                </div>
+                <!--end::Movimiento-->
+
+                <!--begin::Velocidad-->
+                <div class="vp-seccion-columna vp-ptz-velocidad">
+                    <span class="vp-ptz-etiqueta">
+                        <span>Velocidad</span>
+                        <span id="ptz-velocidad-valor">5</span>
+                    </span>
+                    <input type="range" id="ptz-velocidad" min="1" max="10" step="1" value="5" aria-label="Velocidad del movimiento" />
+                </div>
+                <!--end::Velocidad-->
+
+                <!--begin::Óptica-->
+                <div class="vp-seccion-columna">
+                    <div class="vp-ptz-pares">
+                        <div class="vp-ptz-par">
+                            <span class="vp-ptz-par-nombre">Zoom</span>
+                            <button type="button" class="vp-btn-control" data-ptz-accion="zoom-out" title="Alejar">
+                                <i class="ki-outline ki-minus fs-5"></i>
+                            </button>
+                            <button type="button" class="vp-btn-control" data-ptz-accion="zoom-in" title="Acercar">
+                                <i class="ki-outline ki-plus fs-5"></i>
+                            </button>
+                        </div>
+
+                        <div class="vp-ptz-par">
+                            <span class="vp-ptz-par-nombre">Foco</span>
+                            <button type="button" class="vp-btn-control" data-ptz-accion="foco-lejos" title="Enfocar lejos">
+                                <i class="ki-outline ki-minus fs-5"></i>
+                            </button>
+                            <button type="button" class="vp-btn-control" data-ptz-accion="foco-cerca" title="Enfocar cerca">
+                                <i class="ki-outline ki-plus fs-5"></i>
+                            </button>
+                        </div>
+
+                        <div class="vp-ptz-par">
+                            <span class="vp-ptz-par-nombre">Iris</span>
+                            <button type="button" class="vp-btn-control" data-ptz-accion="iris-cerrar" title="Cerrar iris">
+                                <i class="ki-outline ki-minus fs-5"></i>
+                            </button>
+                            <button type="button" class="vp-btn-control" data-ptz-accion="iris-abrir" title="Abrir iris">
+                                <i class="ki-outline ki-plus fs-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!--end::Óptica-->
+
+                <!--begin::Funciones-->
+                <div class="vp-seccion-columna">
+                    <span class="vp-seccion-subtitulo">Funciones</span>
+                    <div class="vp-funciones">
+                        <button type="button" class="vp-toggle" data-ptz-funcion="escobilla">
+                            <i class="fas fa-tint"></i> Escobilla
+                        </button>
+                    </div>
+                </div>
+                <!--end::Funciones-->
+            </div>
+        </div>
+        <!--end::Controles PTZ-->
+    </aside>
+    <!--end::Lateral-->
+</div>
+
+@section Modals {
+    <!--begin::Configuración de cámara-->
+    <div class="modal fade" id="modal-camara" aria-modal="true" role="dialog" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-550px">
+            <div class="modal-content rounded">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="modal-camara-titulo">Configurar cámara</h3>
+                    <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                        <i class="ki-outline ki-cross fs-1"></i>
+                    </div>
+                </div>
+
+                <div class="modal-body px-10 py-8">
+                    <form id="modal-camara-form" class="form">
+                        <div class="d-flex flex-column mb-7 fv-row">
+                            <label class="fs-6 fw-semibold mb-2" for="config-nombre">Nombre</label>
+                            <input type="text" class="form-control form-control-solid" id="config-nombre" placeholder="Nombre con el que se identifica la cámara" />
+                        </div>
+
+                        <div class="d-flex flex-column mb-7 fv-row">
+                            <label class="fs-6 fw-semibold mb-2" for="config-stream">Stream de go2rtc</label>
+                            <input type="text" class="form-control form-control-solid" id="config-stream" placeholder="Nombre del stream en go2rtc.yaml" />
+                            <div class="form-text">Debe coincidir con el nombre declarado en go2rtc.yaml.</div>
+                        </div>
+
+                        <div class="form-check form-check-custom form-check-solid mb-5">
+                            <input class="form-check-input" type="checkbox" id="config-ptz" />
+                            <label class="form-check-label fw-semibold" for="config-ptz">Tiene control PTZ</label>
+                        </div>
+
+                        <div class="form-check form-check-custom form-check-solid">
+                            <input class="form-check-input" type="checkbox" id="config-audio" />
+                            <label class="form-check-label fw-semibold" for="config-audio">Su transmisión trae audio</label>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="config-guardar">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--end::Configuración de cámara-->
+}
+
+@section Scripts {
+    <script>
+        async function delay(milisegundos) {
+            return new Promise((resolve, reject) => {
+                setTimeout(resolve, milisegundos);
+            })
+        }
+
+        const CAMARAS = {
+            1: { nombre: "Cámara 1 · Frontal", stream: "camara_1", ptz: true, audio: false },
+            2: { nombre: "Cámara 2 · Lateral", stream: "camara_2", ptz: false, audio: false },
+            3: { nombre: "Cámara 3 · Trasera", stream: "camara_3", ptz: true, audio: true },
+            4: { nombre: "Cámara 4 · Interior", stream: "camara_4", ptz: false, audio: false },
+            5: { nombre: "Cámara 5", stream: "camara_5", ptz: false, audio: false },
+            6: { nombre: "Cámara 6", stream: "camara_6", ptz: false, audio: false }
+        };
+
+        function TextoHtml(valor) {
+            return String(valor ?? "").replace(/[&<>"]/g, caracter => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"
+            }[caracter]));
+        }
+
+        function CeldaHtml(numero, camara) {
+            const nombre = TextoHtml(camara.nombre ?? `Cámara ${numero}`);
+
+            return `
+                <div class="vp-celda" data-camara="${numero}">
+                    <div class="vp-celda-vacia">
+                        <i class="ki-outline ki-screen fs-3x"></i>
+                        <span class="fs-7 fw-semibold">Conectando…</span>
+                    </div>
+
+                    <div class="vp-celda-capa" title="Seleccionar esta cámara"></div>
+
+                    <div class="vp-celda-barra">
+                        <span class="vp-celda-num">${numero}</span>
+                        <span class="vp-celda-nombre">${nombre}</span>
+                        <span class="vp-vivo" data-estado="conectando" title="Conectando">Conectando</span>
+
+                        <div class="vp-celda-acciones">
+                            <div class="vp-celda-volumen">
+                                <button type="button" class="vp-celda-btn" data-accion="silencio" title="Activar sonido">
+                                    <i class="fas fa-volume-mute"></i>
+                                </button>
+                                <input type="range" class="vp-celda-volumen-barra" min="0" max="100" step="1" value="100"
+                                    title="Volumen" aria-label="Volumen" />
+                            </div>
+                            <button type="button" class="vp-celda-btn" data-accion="capturar" title="Capturar imagen">
+                                <i class="ki-outline ki-picture fs-5"></i>
+                            </button>
+                            <button type="button" class="vp-celda-btn" data-accion="pantalla-completa" title="Pantalla completa">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function ItemHtml(numero, camara) {
+            const nombre = TextoHtml(camara.nombre ?? `Cámara ${numero}`);
+
+            return `
+                <div class="vp-item" role="button" tabindex="0" data-camara="${numero}"
+                    data-ptz="${camara.ptz ? "true" : "false"}" data-nombre="${nombre}">
+                    <span class="vp-item-num">${numero}</span>
+                    <span class="vp-item-texto">
+                        <span class="vp-item-nombre">${nombre}</span>
+                        <span class="vp-item-estado" data-estado="conectando">Conectando</span>
+                    </span>
+                    <span class="vp-chip-ptz" title="Cámara con control PTZ">PTZ</span>
+                    <button type="button" class="vp-item-config" data-accion="configurar"
+                        title="Configurar cámara">
+                        <i class="ki-outline ki-setting-2 fs-5"></i>
+                    </button>
+                </div>`;
+        }
+
+        function PintarCamaras() {
+            const visor = document.getElementById("visor");
+            const lista = document.getElementById("lista-camaras");
+            const numeros = Object.keys(CAMARAS);
+
+            visor.innerHTML = numeros.map(numero => CeldaHtml(numero, CAMARAS[numero])).join("");
+            lista.innerHTML = numeros.map(numero => ItemHtml(numero, CAMARAS[numero])).join("");
+
+            visor.style.setProperty("--vp-tira", String(Math.max(numeros.length - 1, 1)));
+
+            visor.querySelector(".vp-celda")?.classList.add("seleccionada");
+            lista.querySelector(".vp-item")?.classList.add("activo");
+        }
+
+        PintarCamaras();
+
+        const MODO_PRUEBAS = true;
+        const GO2RTC_URL = "https://localhost:7037/api/video/streaming/";
+
+        const COMPONENTE_LISTO = import(new URL("video-stream.js", GO2RTC_URL).href);
+
+        let AlMontarCamara = null;
+
+        async function MontarCamara(celda, stream) {
+            if (!celda) return;
+
+            if (!stream) {
+                console.warn("Sin stream de go2rtc para la cámara", celda.dataset.camara);
+                return;
+            }
+
+            await COMPONENTE_LISTO;
+
+            celda.querySelector("video-stream")?.remove();
+
+            const reproductor = document.createElement("video-stream");
+
+            reproductor.background = false;
+            reproductor.visibilityCheck = false;
+            reproductor.visibilityThreshold = 0;
+
+            reproductor.origen = new URL("api/ws?src=" + encodeURIComponent(stream), GO2RTC_URL);
+
+            if (celda.offsetParent === null) reproductor.detenido = true;
+            else reproductor.src = reproductor.origen;
+
+            celda.insertBefore(reproductor, celda.querySelector(".vp-celda-capa"));
+
+            if (AlMontarCamara) AlMontarCamara(celda);
+        }
+
+        function StreamDeUrl(url) {
+            try {
+                return new URL(url, location.href).searchParams.get("src");
+            } catch {
+                return null;
+            }
+        }
+
+        async function IniciarCamaras() {
+            if (MODO_PRUEBAS) {
+                document.querySelectorAll(".vp-celda").forEach(celda => {
+                    MontarCamara(celda, CAMARAS[celda.dataset.camara]?.stream);
+                });
+
+                return;
+            }
+
+            const CAMARAS_ENDPOINTS = await FetchUtils('camaras', {
+                method: "GET",
+            }).then(resp => {
+                if (!resp || !resp.Ok || !resp.Respuesta || resp.Respuesta.length == 0) return [];
+
+                return resp.Respuesta
+                    .filter(el => el.Activo)
+                    .map(el => el.StreamingUrl);
+            })
+
+            CAMARAS_ENDPOINTS.map(async (src, index) => {
+                let reintentarConexion = true;
+
+                while (reintentarConexion) {
+                    try {
+                        await fetch(src, { mode: 'no-cors' });
+                        reintentarConexion = false;
+                    } catch {
+                        await delay(5000)
+                    }
+                }
+
+                MontarCamara(document.querySelector(`.vp-celda[data-camara="${index + 1}"]`), StreamDeUrl(src));
+            });
+        };
+
+        IniciarCamaras();
+    </script>
+
+    <script>
+        async function ReiniciarCamaras(self) {
+            self.disabled = true;
+            try {
+                await fetch("http://localhost:1984/api/exit?code=100", { method: "POST", mode: 'no-cors' });
+            } finally {
+                setTimeout(IniciarCamaras, 5000);
+                setTimeout(() => {
+                    self.disabled = false;
+                }, 15000)
+            }
+        }
+    </script>
+
+    <script>
+        (function () {
+            const visor = document.getElementById("visor");
+            const lista = document.getElementById("lista-camaras");
+            const vistaToggle = document.getElementById("vista-toggle");
+
+            const controles = document.getElementById("panel-controles");
+            const ptzEstado = document.getElementById("ptz-estado");
+            const ptzObjetivo = document.getElementById("ptz-objetivo-nombre");
+            const ptzVelocidad = document.getElementById("ptz-velocidad");
+            const ptzVelocidadValor = document.getElementById("ptz-velocidad-valor");
+
+            const celdas = visor.querySelectorAll(".vp-celda");
+            const items = lista.querySelectorAll(".vp-item");
+
+            function SeleccionarCamara(numero) {
+                const item = lista.querySelector(`.vp-item[data-camara="${numero}"]`);
+                if (!item) return;
+
+                items.forEach(el => el.classList.toggle("activo", el === item));
+
+                item.scrollIntoView({ block: "nearest", behavior: "smooth" });
+                celdas.forEach(el => el.classList.toggle("seleccionada", el.dataset.camara === numero));
+
+                ptzObjetivo.innerText = item.dataset.nombre ?? "";
+
+                const tienePtz = item.dataset.ptz === "true";
+                controles.dataset.disponible = tienePtz ? "true" : "false";
+                ptzEstado.innerText = tienePtz ? "Disponible" : "No disponible";
+
+                controles.querySelectorAll(".vp-seccion-columna")
+                    .forEach(seccion => seccion.toggleAttribute("inert", !tienePtz));
+
+                SincronizarTransmisiones();
+            }
+
+            function CambiarVista(vista) {
+                visor.dataset.vista = vista;
+                vistaToggle.querySelectorAll(".vp-vista-btn")
+                    .forEach(el => el.classList.toggle("activo", el.dataset.vista === vista));
+
+                SincronizarTransmisiones();
+            }
+
+            items.forEach(item => {
+                item.addEventListener("click", () => SeleccionarCamara(item.dataset.camara));
+
+                item.addEventListener("keydown", evento => {
+                    if (evento.key !== "Enter" && evento.key !== " ") return;
+
+                    evento.preventDefault();
+                    SeleccionarCamara(item.dataset.camara);
+                });
+            });
+
+            const modalCamara = new bootstrap.Modal(document.getElementById("modal-camara"));
+            const modalTitulo = document.getElementById("modal-camara-titulo");
+            const configNombre = document.getElementById("config-nombre");
+            const configStream = document.getElementById("config-stream");
+            const configPtz = document.getElementById("config-ptz");
+            const configAudio = document.getElementById("config-audio");
+
+            let camaraEnConfiguracion = null;
+
+            document.querySelectorAll("[data-accion='configurar']").forEach(boton => {
+                boton.addEventListener("click", evento => {
+                    evento.stopPropagation();
+
+                    const item = boton.closest(".vp-item");
+                    const numero = item.dataset.camara;
+
+                    camaraEnConfiguracion = numero;
+
+                    modalTitulo.innerText = item.dataset.nombre ?? "Configurar cámara";
+                    configNombre.value = item.dataset.nombre ?? "";
+                    configStream.value = CAMARAS[numero]?.stream ?? "";
+                    configPtz.checked = item.dataset.ptz === "true";
+                    configAudio.checked = !!CAMARAS[numero]?.audio;
+
+                    modalCamara.show();
+                });
+            });
+
+            document.getElementById("config-guardar").addEventListener("click", () => {
+                const numero = camaraEnConfiguracion;
+                if (!numero) return;
+
+                const item = lista.querySelector(`.vp-item[data-camara="${numero}"]`);
+                const celda = visor.querySelector(`.vp-celda[data-camara="${numero}"]`);
+                const nombre = configNombre.value.trim() || item.dataset.nombre;
+
+                item.dataset.nombre = nombre;
+                item.querySelector(".vp-item-nombre").innerText = nombre;
+                item.dataset.ptz = configPtz.checked ? "true" : "false";
+
+                if (celda) {
+                    celda.querySelector(".vp-celda-nombre").innerText = nombre;
+                    celda.dataset.audio = configAudio.checked ? "true" : "false";
+                }
+
+                if (CAMARAS[numero]) {
+                    CAMARAS[numero].nombre = nombre;
+                    CAMARAS[numero].stream = configStream.value.trim();
+                    CAMARAS[numero].ptz = configPtz.checked;
+                    CAMARAS[numero].audio = configAudio.checked;
+                }
+
+                if (item.classList.contains("activo")) SeleccionarCamara(numero);
+
+                modalCamara.hide();
+            });
+
+            celdas.forEach(celda => {
+                celda.addEventListener("click", () => {
+                    if (visor.dataset.vista !== "previa") return;
+                    SeleccionarCamara(celda.dataset.camara);
+                });
+            });
+
+            vistaToggle.querySelectorAll(".vp-vista-btn").forEach(boton => {
+                boton.addEventListener("click", () => CambiarVista(boton.dataset.vista));
+            });
+
+            SeleccionarCamara(lista.querySelector(".vp-item.activo").dataset.camara);
+
+            document.querySelectorAll("[data-ptz-funcion]").forEach(boton => {
+                boton.addEventListener("click", () => boton.classList.toggle("activo"));
+            });
+
+            function PintarVelocidad() {
+                const recorrido = (ptzVelocidad.value - ptzVelocidad.min) / (ptzVelocidad.max - ptzVelocidad.min);
+
+                ptzVelocidad.style.setProperty("--vp-relleno", `${recorrido * 100}%`);
+                ptzVelocidadValor.innerText = ptzVelocidad.value;
+            }
+
+            ptzVelocidad.addEventListener("input", PintarVelocidad);
+            PintarVelocidad();
+
+            function ReproductorDe(celda) {
+                return celda ? celda.querySelector("video-stream") : null;
+            }
+
+            function VideoDe(celda) {
+                return ReproductorDe(celda)?.video ?? null;
+            }
+
+            function PrepararVideo(reproductor) {
+                const video = reproductor.video;
+                if (!video) return;
+
+                video.controls = false;
+
+                if (!video.dataset.iniciado) {
+                    video.dataset.iniciado = "1";
+                    video.muted = true;
+                }
+            }
+
+            const ESTADOS_CELDA = {
+                vivo: "En vivo",
+                conectando: "Conectando",
+                cargando: "Cargando",
+                pausado: "Pausado",
+                detenido: "Detenido",
+                error: "Sin señal"
+            };
+
+            function ActualizarEstadoCelda(celda, estado, detalle) {
+                const indicador = celda.querySelector(".vp-vivo");
+                if (!indicador) return;
+
+                if (ReproductorDe(celda)?.detenido && estado !== "detenido") return;
+
+                const texto = ESTADOS_CELDA[estado] ?? ESTADOS_CELDA.error;
+
+                indicador.dataset.estado = estado in ESTADOS_CELDA ? estado : "error";
+                indicador.innerText = texto;
+                indicador.title = detalle ? `${texto} · ${detalle}` : texto;
+
+                const enListado = lista.querySelector(`.vp-item[data-camara="${celda.dataset.camara}"] .vp-item-estado`);
+
+                if (enListado) {
+                    enListado.dataset.estado = indicador.dataset.estado;
+                    enListado.innerText = texto;
+                }
+            }
+
+            function LeerEstado(celda) {
+                const reproductor = ReproductorDe(celda);
+                const modo = reproductor?.querySelector(".mode")?.innerText.trim();
+
+                if (!modo) return false;
+
+                if (modo === "error") {
+                    ActualizarEstadoCelda(celda, "error", reproductor.querySelector(".status")?.innerText.trim());
+                } else if (modo !== "loading") {
+                    ActualizarEstadoCelda(celda, "vivo", modo);
+                } else {
+                    const video = reproductor.video;
+                    const corriendo = video && !video.paused && video.readyState >= 2;
+
+                    ActualizarEstadoCelda(celda, corriendo ? "vivo" : "conectando");
+                }
+
+                return true;
+            }
+
+            function DetenerCamara(celda) {
+                const reproductor = ReproductorDe(celda);
+                if (!reproductor || reproductor.detenido) return;
+
+                reproductor.detenido = true;
+                reproductor.disconnectedCallback();
+            }
+
+            function ReanudarCamara(celda) {
+                const reproductor = ReproductorDe(celda);
+                if (!reproductor || !reproductor.detenido) return;
+
+                reproductor.detenido = false;
+
+                if (!reproductor.wsURL) reproductor.src = reproductor.origen;
+                else reproductor.connectedCallback();
+
+                if (!LeerEstado(celda)) ActualizarEstadoCelda(celda, "conectando");
+            }
+
+            function SincronizarTransmisiones() {
+                celdas.forEach(celda => {
+                    if (celda.offsetParent !== null) ReanudarCamara(celda);
+                    else DetenerCamara(celda);
+                });
+            }
+
+            function ActualizarVolumen(celda) {
+                const video = VideoDe(celda);
+                if (!video) return;
+
+                const barra = celda.querySelector(".vp-celda-volumen-barra");
+                if (barra) barra.value = Math.round(video.volume * 100);
+
+                const boton = celda.querySelector("[data-accion='silencio']");
+                if (!boton) return;
+
+                boton.title = video.muted ? "Activar sonido" : "Silenciar";
+                boton.querySelector("i").className = video.muted || video.volume === 0
+                    ? "fas fa-volume-mute"
+                    : video.volume < 0.5 ? "fas fa-volume-down" : "fas fa-volume-up";
+            }
+
+            function AlternarSilencio(celda) {
+                const video = VideoDe(celda);
+                if (!video) return;
+
+                video.muted = !video.muted;
+                if (!video.muted) ReproductorDe(celda).play();
+            }
+
+            function FijarVolumen(celda, porcentaje) {
+                const video = VideoDe(celda);
+                if (!video) return;
+
+                video.volume = porcentaje / 100;
+                if (porcentaje > 0) video.muted = false;
+            }
+
+            document.querySelectorAll("[data-accion='silencio']").forEach(boton => {
+                boton.addEventListener("click", () => AlternarSilencio(boton.closest(".vp-celda")));
+            });
+
+            document.querySelectorAll(".vp-celda-volumen-barra").forEach(barra => {
+                barra.addEventListener("input", () => FijarVolumen(barra.closest(".vp-celda"), barra.value));
+            });
+
+            function NombreCaptura(celda) {
+                const nombre = (celda.querySelector(".vp-celda-nombre")?.innerText ?? "camara")
+                    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+                    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+                const ahora = new Date();
+                const dosDigitos = valor => String(valor).padStart(2, "0");
+                const marca = `${ahora.getFullYear()}${dosDigitos(ahora.getMonth() + 1)}${dosDigitos(ahora.getDate())}`
+                    + `-${dosDigitos(ahora.getHours())}${dosDigitos(ahora.getMinutes())}${dosDigitos(ahora.getSeconds())}`;
+
+                return `${nombre || "camara"}-${marca}.jpg`;
+            }
+
+            function CuadroActual(celda) {
+                const video = VideoDe(celda);
+                if (!video) return null;
+
+                if (!video.videoWidth || !video.videoHeight) return video.poster || null;
+
+                const lienzo = document.createElement("canvas");
+                lienzo.width = video.videoWidth;
+                lienzo.height = video.videoHeight;
+                lienzo.getContext("2d").drawImage(video, 0, 0);
+
+                return lienzo.toDataURL("image/jpeg", 0.92);
+            }
+
+            document.querySelectorAll("[data-accion='capturar']").forEach(boton => {
+                boton.addEventListener("click", () => {
+                    const celda = boton.closest(".vp-celda");
+                    const imagen = CuadroActual(celda);
+
+                    if (!imagen) {
+                        SwalUtils.error({
+                            title: "Sin imagen",
+                            text: "Todavía no hay un cuadro de esta cámara para capturar.",
+                            confirmButtonText: "Aceptar"
+                        });
+                        return;
+                    }
+
+                    const enlace = document.createElement("a");
+                    enlace.href = imagen;
+                    enlace.download = NombreCaptura(celda);
+                    enlace.click();
+
+                    celda.classList.add("vp-capturando");
+                    setTimeout(() => celda.classList.remove("vp-capturando"), 400);
+                });
+            });
+
+            celdas.forEach(celda => {
+                celda.dataset.audio = CAMARAS[celda.dataset.camara]?.audio ? "true" : "false";
+            });
+
+            function ConectarCelda(celda) {
+                const reproductor = ReproductorDe(celda);
+                if (!reproductor || reproductor.conectado) return;
+
+                reproductor.conectado = true;
+                PrepararVideo(reproductor);
+
+                reproductor.addEventListener("volumechange", () => ActualizarVolumen(celda), true);
+                reproductor.addEventListener("waiting", () => ActualizarEstadoCelda(celda, "cargando"), true);
+                reproductor.addEventListener("stalled", () => ActualizarEstadoCelda(celda, "cargando"), true);
+                reproductor.addEventListener("pause", () => ActualizarEstadoCelda(celda, "pausado"), true);
+                reproductor.addEventListener("playing", () => LeerEstado(celda), true);
+                reproductor.addEventListener("error", () => ActualizarEstadoCelda(celda, "error", "Falló la reproducción"), true);
+
+                const Desconectar = reproductor.ondisconnect.bind(reproductor);
+
+                reproductor.ondisconnect = () => {
+                    Desconectar();
+                    if (reproductor.detenido) ActualizarEstadoCelda(celda, "detenido");
+                };
+
+                new MutationObserver(() => {
+                    PrepararVideo(reproductor);
+                    LeerEstado(celda);
+                }).observe(reproductor, {
+                    childList: true,
+                    subtree: true,
+                    characterData: true,
+                    attributes: true,
+                    attributeFilter: ["controls"]
+                });
+
+                ActualizarVolumen(celda);
+
+                if (reproductor.detenido) ActualizarEstadoCelda(celda, "detenido");
+                else if (!LeerEstado(celda)) ActualizarEstadoCelda(celda, "conectando");
+            }
+
+            AlMontarCamara = ConectarCelda;
+            celdas.forEach(celda => ConectarCelda(celda));
+
+            function CeldaEnPantallaCompleta() {
+                return document.fullscreenElement || document.webkitFullscreenElement || null;
+            }
+
+            document.querySelectorAll("[data-accion='pantalla-completa']").forEach(boton => {
+                boton.addEventListener("click", () => {
+                    const celda = boton.closest(".vp-celda");
+                    if (!celda) return;
+
+                    if (CeldaEnPantallaCompleta()) {
+                        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+                        return;
+                    }
+
+                    const solicitar = celda.requestFullscreen || celda.webkitRequestFullscreen;
+                    if (solicitar) solicitar.call(celda);
+                });
+            });
+
+            function ActualizarIconosPantallaCompleta() {
+                const activa = CeldaEnPantallaCompleta();
+
+                document.querySelectorAll("[data-accion='pantalla-completa']").forEach(boton => {
+                    const celda = boton.closest(".vp-celda");
+                    const maximizada = activa !== null && celda === activa;
+
+                    boton.title = maximizada ? "Salir de pantalla completa" : "Pantalla completa";
+                    boton.querySelector("i").className = maximizada ? "fas fa-compress" : "fas fa-expand";
+                });
+            }
+
+            document.addEventListener("fullscreenchange", ActualizarIconosPantallaCompleta);
+            document.addEventListener("webkitfullscreenchange", ActualizarIconosPantallaCompleta);
+        })();
+    </script>
+}

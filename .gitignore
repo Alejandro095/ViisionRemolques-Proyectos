@@ -1,0 +1,115 @@
+viinsoft-licencia.lic
+/*.rar
+
+*.ts
+*.m3u8
+**/hls/
+
+**/Archivos/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio cache/options directory
+.vs/
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Cc]ompilados/
+
+# Uncomment if you have tasks that create the project's static files in wwwroot
+#wwwroot/
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# Files built by Visual Studio
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlh
+*.tli
+*.tmp
+*.tmp_proj
+*.log
+*.vspscc
+*_i.asm
+*_p.asm
+*.cachefile
+*.dbmdl
+*.bak
+*.backup
+*.BLOB
+
+# Rider
+.idea/
+
+# OS generated files
+ehthumbs.db
+Icon?
+Thumbs.db
+Desktop.ini
+
+# Paket dependency manager
+.paket/
+paket-files/
+
+# NuGet
+*.nupkg
+*.snupkg
+# The packages folder can be ignored because of PackageReference
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+# Uncomment if necessary, but keep nuget.config
+# *.nuget.props
+# *.nuget.targets
+
+# Microsoft Azure Web Apps
+.publish/
+*.PublishSettings
+*.pubxml
+*.pubxml.user
+PublishScripts/
+
+# Windows image file caches
+*.wim
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
