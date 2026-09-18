@@ -3,81 +3,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ViisionRemolques.Controllers
 {
-    public class WebhookController : Controller
+    public class WebhookController : ApiBaseController
     {
-        // GET: WebhookController
-        public ActionResult Index()
+        [HttpGet]
+        [Route("Alertas")]
+        public IResult Alertas()
         {
-            return View();
-        }
-
-        // GET: WebhookController/Details/5
-        public ActionResult Details(int id)
-        {
-            return View();
-        }
-
-        // GET: WebhookController/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: WebhookController/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
-        {
-            try
+            return Results.Ok(new
             {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: WebhookController/Edit/5
-        public ActionResult Edit(int id)
-        {
-            return View();
-        }
-
-        // POST: WebhookController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: WebhookController/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        // POST: WebhookController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+                msg = "!"
+            });
         }
     }
 }

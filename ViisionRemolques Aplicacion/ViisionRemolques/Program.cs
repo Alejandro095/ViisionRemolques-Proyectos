@@ -16,6 +16,8 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddOpenApi();
 
+builder.Services.AddHealthChecks();
+
 builder.Services.AddTransient<IDbConnection>(sp =>
     new SqlConnection(builder.Configuration.GetConnectionString("DatabaseConnection")));
 
@@ -51,6 +53,8 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 app.UseHangfireDashboard("/api/hangfire");
+
+app.MapHealthChecks("/api/health");
 
 app.UseRouting();
 
