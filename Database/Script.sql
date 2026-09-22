@@ -27,6 +27,7 @@ CREATE TABLE Camaras (
     Modelo                              NVARCHAR(100) NOT NULL,
     Activo                              BIT NOT NULL DEFAULT 1,
     IP                                  NVARCHAR(45)  NULL,
+    Go2Rtc                              NVARCHAR(100) NOT NULL,
 
     -- Digest
     Digest_Usuario                      NVARCHAR(100) NULL,
@@ -52,6 +53,7 @@ INSERT INTO Camaras (
     Modelo,
     Activo,
     IP,
+    Go2Rtc,
     Digest_Usuario,
     Digest_Contrasena,
     Soporta_PTZ,
@@ -68,6 +70,7 @@ VALUES
         N'DS2DF8C842IXG1ELWY',
         1,
         N'192.168.50.25',
+        N'camara_1',
         N'admin',
         N'Viinsoft+1',
         1,
@@ -83,6 +86,7 @@ VALUES
         N'DS2CD3687G3TLIZSU',
         1,
         N'192.168.50.26',
+        N'camara_2',
         N'admin',
         N'Viinsoft+1',
         1,
@@ -98,6 +102,7 @@ VALUES
         N'DS2CD6365G1IVS',
         1,
         N'192.168.50.27',
+        N'camara_3',
         N'admin',
         N'Viinsoft+1',
         1,
@@ -113,6 +118,7 @@ VALUES
         N'iDSTCM403GIR',
         1,
         N'192.168.50.28',
+        N'camara_4',
         N'admin',
         N'Viinsoft+1',
         1,
@@ -128,6 +134,7 @@ VALUES
         N'DS2CD3T87G3PLISUYSL',
         1,
         N'192.168.50.29',
+        N'camara_5',
         N'admin',
         N'Viinsoft+1',
         0,
@@ -152,6 +159,7 @@ BEGIN
         Modelo,
         Activo,
         IP,
+        Go2Rtc,
         Digest_Usuario,
         Digest_Contrasena,
         Soporta_PTZ,
@@ -167,7 +175,7 @@ BEGIN
 END;
 GO
 
--- SP: Buscar una unica camara por modelo exacto
+-- SP: Buscar una unica camara por IdInterno exacto
 CREATE OR ALTER PROCEDURE sp_Camaras_BuscarPorIdInterno
     @IdInterno BIGINT
 AS
@@ -180,6 +188,7 @@ BEGIN
         Modelo,
         Activo,
         IP,
+        Go2Rtc,
         Digest_Usuario,
         Digest_Contrasena,
         Soporta_PTZ,

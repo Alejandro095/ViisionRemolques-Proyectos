@@ -7,6 +7,7 @@ using Scalar.AspNetCore;
 using System.Data;
 using System.Text;
 using ViisionRemolques;
+using ViisionRemolques.Auth.YARP;
 
 var builder = WebApplication.CreateBuilder();
 
@@ -36,6 +37,24 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            // Extraer token del query string ?token=xxxx
+            var accessToken = context.Request.Query["token"];
+
+            // Si la petición va dirigida al proxy de video / streaming
+            var path = context.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/video/streaming"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
@@ -58,7 +77,8 @@ builder.Services.AddHangfire(configuration => configuration
 builder.Services.AddHangfireServer();
 
 builder.Services.AddReverseProxy()
-                .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+                .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+                .AddTransforms<QueryStringValidationTransformProvider>(); ;
 
 builder.Services.AddApplicationServices();
 
@@ -82,6 +102,7 @@ app.MapHealthChecks("/health");
 app.UseRouting();
 
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapReverseProxy();

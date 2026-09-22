@@ -1,23 +1,20 @@
 streams:
 
   camara_1:
-    - rtsp://admin:Viinsoft+1@192.168.50.20:554/ISAPI/Streaming/channels/101
-
-  camara_2:
-    - rtsp://admin:Viinsoft+1@192.168.50.21:554/ISAPI/Streaming/channels/101
-
-  camara_3:
-    - rtsp://admin:Viinsoft+1@192.168.50.22:554/ISAPI/Streaming/channels/101
-
-  camara_4:
-    - rtsp://admin:Viinsoft+1@192.168.50.23:554/ISAPI/Streaming/channels/101
-    
-  camara_5:
-    - rtsp://admin:Viinsoft+1@192.168.50.24:554/ISAPI/Streaming/channels/101
-    
-  camara_6:
     - rtsp://admin:Viinsoft+1@192.168.50.25:554/ISAPI/Streaming/channels/101
 
+  camara_2:
+    - rtsp://admin:Viinsoft+1@192.168.50.26:554/ISAPI/Streaming/channels/101
+
+  camara_3:
+    - rtsp://admin:Viinsoft+1@192.168.50.27:554/ISAPI/Streaming/channels/101
+
+  camara_4:
+    - rtsp://admin:Viinsoft+1@192.168.50.28:554/ISAPI/Streaming/channels/101
+    
+  camara_5:
+    - rtsp://admin:Viinsoft+1@192.168.50.29:554/ISAPI/Streaming/channels/101
+    
 api:
   listen: "localhost:1984"
   origin: "*"

@@ -5,6 +5,7 @@
         public long IdInterno { get; set; }
         public string Nombre { get; set; } = string.Empty;
         public string Modelo { get; set; } = string.Empty;
+        public string Go2Rtc { get; set; } = string.Empty;
         public bool Activo { get; set; }
         public string? IP { get; set; }
 
