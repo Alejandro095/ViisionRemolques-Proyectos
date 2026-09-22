@@ -1,25 +1,46 @@
 using Hangfire;
 using Hangfire.SqlServer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Data;
+using System.Text;
+using ViisionRemolques;
 
-var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-{
-    Args = args,
-    WebRootPath = "assets"
-});
+var builder = WebApplication.CreateBuilder();
+
+builder.Services.AddProblemDetails();
 
 builder.Services.AddControllers();
-
-builder.Services.AddControllersWithViews();
 
 builder.Services.AddOpenApi();
 
 builder.Services.AddHealthChecks();
 
-builder.Services.AddTransient<IDbConnection>(sp =>
-    new SqlConnection(builder.Configuration.GetConnectionString("DatabaseConnection")));
+builder.Services.AddAuthentication(options =>
+{
+    // Esquema predeterminado global (JWT)
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    };
+});
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddDapperRepositories(builder.Configuration);
 
 builder.Services.AddHangfire(configuration => configuration
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -39,7 +60,15 @@ builder.Services.AddHangfireServer();
 builder.Services.AddReverseProxy()
                 .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
+builder.Services.AddApplicationServices();
+
 var app = builder.Build();
+
+app.UseExceptionHandler();
+
+app.UseStatusCodePages();
+
+app.UsePathBase("/v1/api");
 
 if (app.Environment.IsDevelopment())
 {
@@ -47,16 +76,13 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseStaticFiles(new StaticFileOptions
-{
-    RequestPath = "/assets"
-});
-
-app.UseHangfireDashboard("/api/hangfire");
-
-app.MapHealthChecks("/api/health");
+app.UseHangfireDashboard("/hangfire");
+app.MapHealthChecks("/health");
 
 app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapReverseProxy();
 
