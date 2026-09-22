@@ -18,6 +18,7 @@ namespace ViisionRemolques
             //Repositorios
             services.AddScoped<CamaraRepository>();
             services.AddScoped<EventoPerimetralRepository>();
+            services.AddScoped<AlarmaDesconocidaLogRepository>();
 
             return services;
         }

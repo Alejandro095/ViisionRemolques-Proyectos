@@ -243,10 +243,10 @@ GO
 CREATE TABLE EventosPerimetrales (
     IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
     IdExterno                           BIGINT NULL,
-    PId                                 VARCHAR(64) NOT NULL,
-    IPCamara                            VARCHAR(45) NOT NULL,
+    PId                                 VARCHAR(64),
+    IPCamara                            VARCHAR(45),
     Evento                              VARCHAR(50) NOT NULL,
-    ReglaId                             VARCHAR(64) NOT NULL,
+    ReglaId                             VARCHAR(64),
     TipoObjetivo                        VARCHAR(30) NULL,
     FechaEvento                         DATETIME2(2) NOT NULL DEFAULT GETDATE(),
     PathImagen                          NVARCHAR(500) NULL,
@@ -302,4 +302,51 @@ BEGIN
 
     SET @IdInternoGenerado = SCOPE_IDENTITY();
 END
+GO
+
+--ALERTAS DESCONOCIDAS LOG--------------------------------------------------------------//
+CREATE TABLE dbo.AlarmasDesconocidasLog (
+    IdInterno     BIGINT IDENTITY(1,1) PRIMARY KEY CLUSTERED,
+    IPCamara      VARCHAR(45) NULL,                   -- IP origen de la cámara/petición
+    ContentType   VARCHAR(100) NULL,                  -- application/xml, multipart/form-data, etc.
+    Evento        VARCHAR(100) NULL,
+    Body          NVARCHAR(MAX) NOT NULL,             -- Payload raw (XML/JSON/Texto) completo
+    Motivo        NVARCHAR(250) NOT NULL,             -- Razón: "IP no registrada", "Evento desconocido", "XML inválido"
+    Fecha         DATETIME2(2) NOT NULL DEFAULT GETDATE()
+);
+GO
+
+-- Índices recomendados para búsquedas rápidas por fecha e IP
+CREATE INDEX IX_AlarmasNoDetectadas_Fecha ON dbo.AlarmasDesconocidasLog(Fecha DESC);
+CREATE INDEX IX_AlarmasNoDetectadas_IPCamara ON dbo.AlarmasDesconocidasLog(IPCamara);
+GO
+
+-- SP para registrar alarmas no detectadas
+CREATE OR ALTER PROCEDURE dbo.sp_AlarmasDesconocidasLog_Insertar
+    @IPCamara          VARCHAR(45) = NULL,
+    @ContentType       VARCHAR(100) = NULL,
+    @Evento            VARCHAR(100) = NULL,
+    @Body              NVARCHAR(MAX),
+    @Motivo            NVARCHAR(250)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO dbo.AlarmasDesconocidasLog (
+        IPCamara,
+        ContentType,
+        Evento,
+        Body,
+        Motivo,
+        Fecha
+    )
+    VALUES (
+        @IPCamara,
+        @ContentType,
+        @Evento,
+        @Body,
+        @Motivo,
+        SYSDATETIME()
+    );
+END;
 GO
