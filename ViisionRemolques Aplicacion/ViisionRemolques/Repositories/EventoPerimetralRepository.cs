@@ -13,7 +13,7 @@ namespace ViisionRemolques.Repositories
             _dbConnection = dbConnection;
         }
 
-        public async Task<long> InsertarAsync(EventoPerimetral evento)
+        public async void InsertarAsync(EventoPerimetral evento)
         {
             var parameters = new DynamicParameters();
             parameters.Add("@PId", evento.PId, DbType.String, ParameterDirection.Input, 64);
@@ -32,11 +32,6 @@ namespace ViisionRemolques.Repositories
                 parameters,
                 commandType: CommandType.StoredProcedure
             );
-
-            long idGenerado = parameters.Get<long>("@IdInternoGenerado");
-            evento.IdInterno = idGenerado;
-
-            return idGenerado;
         }
     }
 }

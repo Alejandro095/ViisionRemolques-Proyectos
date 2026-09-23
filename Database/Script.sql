@@ -269,8 +269,7 @@ CREATE PROCEDURE dbo.sp_EventosPerimetrales_Insertar
     @FechaEvento       DATETIME2(2) = NULL,
     @PathImagen        NVARCHAR(500) = NULL,
     @IdExterno         BIGINT = NULL,
-    @Sincronizado      BIT = 0,
-    @IdInternoGenerado BIGINT OUTPUT
+    @Sincronizado      BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -299,10 +298,55 @@ BEGIN
         @Sincronizado,
         GETDATE()
     );
-
-    SET @IdInternoGenerado = SCOPE_IDENTITY();
 END
 GO
+
+--TABLA POLIMÓRFICA DE IMÁGENES---------------------------------------------------------//
+CREATE TABLE Imagenes (
+    IdInterno           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    OrigenTabla         VARCHAR(50) NOT NULL,       -- 'Detecciones', 'BlacklistRostros', 'EventosPerimetrales', etc.
+    OrigenIdInterno     BIGINT NOT NULL,            -- IdInterno correspondiente en la tabla origen
+    PathImagen          NVARCHAR(500) NOT NULL,     -- Ruta local o URL de la imagen
+    Sincronizado        BIT NOT NULL DEFAULT 0,     -- Estado de sincronización remota/cloud
+    FechaCreacion       DATETIME2(2) NOT NULL DEFAULT GETDATE()
+);
+GO
+
+CREATE INDEX IX_Imagenes_OrigenTabla_OrigenIdInterno
+ON Imagenes (OrigenTabla, OrigenIdInterno);
+GO
+
+CREATE INDEX IX_Imagenes_PendientesSincronizar
+ON Imagenes (Sincronizado, FechaCreacion)
+WHERE Sincronizado = 0;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_Imagenes_Insertar
+    @OrigenTabla        VARCHAR(50),
+    @OrigenIdInterno    BIGINT,
+    @PathImagen         NVARCHAR(500),
+    @Sincronizado       BIT = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO dbo.Imagenes (
+        OrigenTabla,
+        OrigenIdInterno,
+        PathImagen,
+        Sincronizado,
+        FechaCreacion
+    )
+    VALUES (
+        @OrigenTabla,
+        @OrigenIdInterno,
+        @PathImagen,
+        @Sincronizado,
+        SYSDATETIME()
+    );
+END;
+GO
+
 
 --ALERTAS DESCONOCIDAS LOG--------------------------------------------------------------//
 CREATE TABLE dbo.AlarmasDesconocidasLog (

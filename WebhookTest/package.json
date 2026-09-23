@@ -1,0 +1,16 @@
+{
+  "name": "webhook-test",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Endpoint universal que acepta cualquier metodo HTTP y guarda la peticion completa en disco",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "express": "^5.1.0",
+    "fast-xml-parser": "^5.11.1"
+  }
+}

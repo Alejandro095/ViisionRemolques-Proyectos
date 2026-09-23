@@ -34,106 +34,104 @@ namespace ViisionRemolques.Controllers
         [DisableRequestSizeLimit]
         public async Task<IActionResult> Post()
         {
-            string? cuerpo = null;
-            byte[]? imageBytes = null;
-
-            var contentType = Request.ContentType ?? "";
-
-            if (contentType.Contains("multipart/form-data"))
+            try
             {
-                var boundary = Microsoft.Net.Http.Headers.MediaTypeHeaderValue.Parse(contentType).Boundary.Value!;
-                var reader = new MultipartReader(boundary, Request.Body);
+                string? cuerpo = null;
+                var imagenes = new List<byte[]>();
 
-                MultipartSection? section;
-                while ((section = await reader.ReadNextSectionAsync()) != null)
+                if (Request.HasFormContentType)
                 {
-                    var cd = section.GetContentDispositionHeader();
-                    if (cd is null) continue;
+                    var form = await Request.ReadFormAsync();
 
-                    if (cd.IsFileDisposition())
+                    foreach (var campo in form)
+                        if (!string.IsNullOrWhiteSpace(campo.Value))
+                            cuerpo ??= campo.Value.ToString();
+
+                    foreach (var fichero in form.Files)
                     {
-                        using var ms = new MemoryStream();
-                        await section.Body.CopyToAsync(ms);
-                        imageBytes = ms.ToArray();
-                    }
-                    else
-                    {
-                        cuerpo = await new StreamReader(section.Body).ReadToEndAsync();
+                        if (fichero.ContentType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true)
+                        {
+                            using var ms = new MemoryStream();
+                            await fichero.CopyToAsync(ms);
+                            imagenes.Add(ms.ToArray());
+                        }
+                        else
+                        {
+                            using var sr = new StreamReader(fichero.OpenReadStream());
+                            cuerpo ??= await sr.ReadToEndAsync();
+                        }
                     }
                 }
-            }
-            else
-            {
-                // Sin filtrar por Content-Type: estas cámaras lo declaran mal, y un
-                // cuerpo descartado aquí se perdería en silencio. El formato real lo
-                // decide el parser mirando el contenido.
-                cuerpo = await new StreamReader(Request.Body).ReadToEndAsync();
-            }
-
-            if (string.IsNullOrWhiteSpace(cuerpo))
-                return Ok();
-
-            //var camEvt = CameraEventParser.Parse(cuerpo, _logger);
-
-
-            CameraEventModel? evento = CameraEventParser.Parse(cuerpo);
-
-            string? pathImagen = null;
-
-            if (imageBytes is not null)
-            {
-                var carpeta = Path.Combine(_env.ContentRootPath, "AlertasPerimetrales", DateTime.UtcNow.ToString("yyyy-MM-dd"));
-                Directory.CreateDirectory(carpeta);
-
-                var nombreArchivo = $"{evento.BaseInfo.PId ?? Guid.NewGuid().ToString("N")}.jpg";
-                pathImagen = Path.Combine(carpeta, nombreArchivo);
-
-                await System.IO.File.WriteAllBytesAsync(pathImagen, imageBytes);
-            }
-
-            if (evento is not null && evento.BaseInfo.EventType == "heartBeat")
-            {
-                return Ok();
-            }
-
-            if (evento is null || evento.BaseInfo.VCAModo == Enums.VCAModoEnum.Ninguno)
-            {
-                await _alarmaDesconocidaLogRepository.InsertarAsync(new AlarmaDesonocidaLogEntity()
+                else
                 {
-                    IPCamara = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    ContentType = Request.ContentType,
-                    Evento = evento?.BaseInfo.EventType ?? null,
-                    Body = cuerpo,
-                    Motivo = evento is null ? "PARSEO_ERROR" : "EXTRACTOR_DETALLES_ERROR"
-                });
+                    cuerpo = await new StreamReader(Request.Body).ReadToEndAsync();
+                }
+
+
+                CameraEventModel? evento = CameraEventParser.Parse(cuerpo);
+
+                string? pathImagen = null;
+
+                if (imagenes.Count > 0)
+                {
+                    var carpeta = Path.Combine(_env.ContentRootPath, "AlertasPerimetrales", DateTime.UtcNow.ToString("yyyy-MM-dd"));
+                    Directory.CreateDirectory(carpeta);
+
+                    var nombreArchivo = $"{evento.BaseInfo.PId ?? Guid.NewGuid().ToString("N")}.jpg";
+                    pathImagen = Path.Combine(carpeta, nombreArchivo);
+
+                    await System.IO.File.WriteAllBytesAsync(pathImagen, imagenes[0]);
+                }
+
+                if (evento is not null && evento.BaseInfo.EventType == "heartBeat" && evento.BaseInfo.EventType == "VMD")
+                {
+                    return Ok();
+                }
+
+                if (evento is null || evento.BaseInfo.VCAModo == Enums.VCAModoEnum.Ninguno)
+                {
+                    await _alarmaDesconocidaLogRepository.InsertarAsync(new AlarmaDesonocidaLogEntity()
+                    {
+                        IPCamara = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                        ContentType = Request.ContentType,
+                        Evento = evento?.BaseInfo.EventType ?? null,
+                        Body = cuerpo,
+                        Motivo = evento is null ? "PARSEO_ERROR" : "EXTRACTOR_DETALLES_ERROR"
+                    });
+
+                    return Ok();
+                }
+
+
+                if (evento.BaseInfo.VCAModo == Enums.VCAModoEnum.EventoSmart && evento.EventoSmart.RegionID is null)
+                {
+                    var hola = "hola mundo";
+                }
+
+                switch (evento.BaseInfo.VCAModo)
+                {
+                    case Enums.VCAModoEnum.EventoSmart:
+
+                        await _repo.InsertarAsync(new EventoPerimetral()
+                        {
+                            PId = evento.BaseInfo.PId,
+                            IPCamara = evento.BaseInfo.IpAddress,
+                            Evento = evento.BaseInfo.EventType,
+                            ReglaId = evento.EventoSmart.RegionID,
+                            TipoObjetivo = evento.EventoSmart.DetectionTarget,
+                            FechaEvento = DateTime.Now,
+                            PathImagen = pathImagen
+                        });
+                        break;
+                }
+
+                return Ok();
+            } catch (Exception exception)
+            {
+                _logger.LogCritical(exception.ToString());
 
                 return Ok();
             }
-
-
-            if (evento.BaseInfo.VCAModo == Enums.VCAModoEnum.EventoSmart && evento.EventoSmart.RegionID is null)
-            {
-                var hola = "hola mundo";
-            }
-
-            switch(evento.BaseInfo.VCAModo)
-            {
-                case Enums.VCAModoEnum.EventoSmart:
-
-                    await _repo.InsertarAsync(new EventoPerimetral()
-                    {
-                        PId = evento.BaseInfo.PId,
-                        IPCamara = evento.BaseInfo.IpAddress,
-                        Evento = evento.BaseInfo.EventType,
-                        ReglaId = evento.EventoSmart.RegionID,
-                        TipoObjetivo = evento.EventoSmart.DetectionTarget,
-                        FechaEvento = DateTime.Now,
-                        PathImagen = pathImagen
-                    });
-                    break;
-            }
-
-            return Ok();
         }
     }
 }

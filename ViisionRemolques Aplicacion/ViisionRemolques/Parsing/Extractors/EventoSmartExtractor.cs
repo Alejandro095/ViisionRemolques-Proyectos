@@ -13,7 +13,9 @@ namespace ViisionRemolques.Parsing.Extractors
             "fielddetection",
             "regionentrance",
             "regionexiting",
-            "linedetection"
+            "linedetection",
+            "unattendedBaggage",
+            "attendedBaggage"
         ];
 
         public bool AplicaPara(string eventType, XDocument? doc = null) =>
