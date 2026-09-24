@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const readline = require('readline');
 const express = require('express');
 
 const { capturarCuerpoCrudo } = require('./lib/cuerpo-crudo');
@@ -10,73 +11,143 @@ const { imprimirPeticion } = require('./lib/imprimir-peticion');
 const { iniciarRegistro } = require('./lib/registro-log');
 const { crearEstadisticas } = require('./lib/estadisticas');
 const { nanoid } = require('./lib/nanoid');
+const { TINTA } = require('./lib/colores');
 
 const RUTA = process.env.RUTA_WEBHOOK || '/v1/api/webhook';
-const PUERTO = Number(process.env.PORT) || 5106;
+const PUERTO_DEFECTO = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const DIR_PETICIONES = process.env.DIR_PETICIONES
   ? path.resolve(process.env.DIR_PETICIONES)
   : path.join(__dirname, 'peticiones');
 const LIMITE_BYTES = Number(process.env.LIMITE_BYTES) || 1024 * 1024 * 1024; // 1 GB
 
-// Cada arranque del servidor tiene su propia carpeta: dentro van las peticiones
-// de esta ejecucion y el log con todo lo que se imprimio por pantalla.
-const ID_SESION = nanoid(12);
-const DIR_SESION = path.join(DIR_PETICIONES, ID_SESION);
-fs.mkdirSync(DIR_SESION, { recursive: true });
-
-const registro = iniciarRegistro(path.join(DIR_SESION, 'log.txt'));
-const estadisticas = crearEstadisticas(ID_SESION);
-
-const app = express();
-app.disable('x-powered-by');
-app.set('trust proxy', true);
-
-// Un unico endpoint: cualquier verbo, cualquier content-type, cualquier archivo.
-// Sin body-parsers: el stream llega intacto al capturador de bytes crudos.
-app.use(RUTA, capturarCuerpoCrudo({ limite: LIMITE_BYTES }), async (req, res) => {
-  try {
-    const { meta, carpeta, parseado, texto, archivosContenido } = await guardarPeticion(
-      req,
-      DIR_SESION
-    );
-    estadisticas.registrar(meta);
-    imprimirPeticion({ meta, carpeta, parseado, texto, archivosContenido });
-    res.status(200).end();
-  } catch (err) {
-    console.error('Error guardando la peticion:', err);
-    res.status(500).end();
+// Si PORT viene por entorno (scripts/CI) no se pregunta nada. Si hay terminal
+// interactiva se pregunta el puerto (Enter = el de por defecto): asi se pueden
+// levantar varias sesiones a la vez, cada una en su propio puerto.
+function preguntarPuerto() {
+  if (process.env.PORT || !process.stdin.isTTY) {
+    return Promise.resolve(PUERTO_DEFECTO);
   }
-});
 
-const servidor = app.listen(PUERTO, HOST, () => {
-  console.log(`--- Sesion ${ID_SESION} arrancada: ${new Date().toISOString()} ---`);
-  console.log(`Escuchando en http://localhost:${PUERTO}${RUTA} (cualquier verbo, cualquier content-type)`);
-  console.log(`Guardando esta sesion en ${DIR_SESION}`);
-  console.log(`Log de esta sesion: ${path.join(DIR_SESION, 'log.txt')}`);
-});
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(`${TINTA.grisOscuro}Puerto (Enter = ${PUERTO_DEFECTO}):${TINTA.reset} `, (respuesta) => {
+      rl.close();
+      const texto = respuesta.trim();
+      if (!texto) return resolve(PUERTO_DEFECTO);
 
-// Sin timeout de cabeceras/cuerpo para no cortar subidas grandes o lentas.
-servidor.requestTimeout = 0;
-servidor.headersTimeout = 0;
+      const n = Number(texto);
+      if (!Number.isInteger(n) || n <= 0 || n > 65535) {
+        console.log(`${TINTA.amarillo}Puerto invalido, usando ${PUERTO_DEFECTO}.${TINTA.reset}`);
+        return resolve(PUERTO_DEFECTO);
+      }
+      resolve(n);
+    });
+  });
+}
 
-// El parser HTTP de Node rechaza (400) los verbos que no estan en
-// http.METHODS antes de que Express los vea. Al menos lo dejamos por consola.
-servidor.on('clientError', (err, socket) => {
-  console.warn(
-    `Peticion rechazada por el parser HTTP de Node (${err.code || err.message}). ` +
-      'Recuerda: solo se aceptan los verbos de http.METHODS.'
-  );
-  if (socket.destroyed || !socket.writable) return;
-  socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
-});
-
+let servidor;
+let registro;
+let estadisticas;
 let cerrando = false;
+
+async function iniciar() {
+  const PUERTO = await preguntarPuerto();
+
+  // Cada arranque del servidor tiene su propia carpeta: dentro van las peticiones
+  // de esta ejecucion y el log con todo lo que se imprimio por pantalla.
+  const ID_SESION = nanoid(12);
+  const DIR_SESION = path.join(DIR_PETICIONES, ID_SESION);
+  fs.mkdirSync(DIR_SESION, { recursive: true });
+
+  registro = iniciarRegistro(path.join(DIR_SESION, 'log.txt'));
+  estadisticas = crearEstadisticas(ID_SESION);
+
+  const app = express();
+  app.disable('x-powered-by');
+  app.set('trust proxy', true);
+
+  // Un unico endpoint: cualquier verbo, cualquier content-type, cualquier archivo.
+  // Sin body-parsers: el stream llega intacto al capturador de bytes crudos.
+  app.use(RUTA, capturarCuerpoCrudo({ limite: LIMITE_BYTES }), async (req, res) => {
+    try {
+      const { meta, carpeta, parseado, texto, archivosContenido } = await guardarPeticion(
+        req,
+        DIR_SESION
+      );
+      estadisticas.registrar(meta);
+      imprimirPeticion({ meta, carpeta, parseado, texto, archivosContenido });
+      res.status(200).end();
+    } catch (err) {
+      console.error(`${TINTA.rojo}Error guardando la peticion:${TINTA.reset}`, err);
+      res.status(500).end();
+    }
+  });
+
+  servidor = app.listen(PUERTO, HOST, () => {
+    console.log(
+      `${TINTA.esmeraldaOscura}---${TINTA.reset} ${TINTA.bold}${TINTA.esmeralda}Sesion ${ID_SESION}${TINTA.reset} arrancada: ` +
+        `${TINTA.grisOscuro}${new Date().toISOString()}${TINTA.reset} ${TINTA.esmeraldaOscura}---${TINTA.reset}`
+    );
+    console.log(
+      `Escuchando en ${TINTA.esmeralda}http://localhost:${PUERTO}${RUTA}${TINTA.reset} (cualquier verbo, cualquier content-type)`
+    );
+    console.log(`Guardando esta sesion en ${TINTA.blanco}${DIR_SESION}${TINTA.reset}`);
+    console.log(`Log de esta sesion: ${TINTA.blanco}${path.join(DIR_SESION, 'log.txt')}${TINTA.reset}`);
+  });
+
+  // El servidor nunca llego a arrancar (puerto ocupado, sin permisos...): no
+  // hubo sesion real, asi que borramos la carpeta vacia que se creo para no
+  // ensuciar peticiones/ con sesiones que jamas recibieron nada.
+  servidor.on('error', (err) => {
+    console.error(`${TINTA.rojo}No se pudo iniciar el servidor en ${HOST}:${PUERTO}${TINTA.reset}`);
+    if (err.code === 'EADDRINUSE') {
+      console.error(`${TINTA.grisOscuro}El puerto ${PUERTO} ya esta en uso por otro proceso.${TINTA.reset}`);
+    } else if (err.code === 'EACCES') {
+      console.error(`${TINTA.grisOscuro}Sin permisos para escuchar en el puerto ${PUERTO}.${TINTA.reset}`);
+    } else {
+      console.error(`${TINTA.grisOscuro}${err.message}${TINTA.reset}`);
+    }
+
+    registro.cerrar(); // libera el log.txt antes de borrar la carpeta (si no, Windows bloquea el rmSync)
+    try {
+      fs.rmSync(DIR_SESION, { recursive: true, force: true });
+    } catch {
+      // si no se pudo borrar, no tapamos el error original con este
+    }
+    process.exit(1);
+  });
+
+  // Sin timeout de cabeceras/cuerpo para no cortar subidas grandes o lentas.
+  servidor.requestTimeout = 0;
+  servidor.headersTimeout = 0;
+
+  // El parser HTTP de Node rechaza (400) los verbos que no estan en
+  // http.METHODS antes de que Express los vea. Al menos lo dejamos por consola.
+  servidor.on('clientError', (err, socket) => {
+    console.warn(
+      `${TINTA.amarillo}Peticion rechazada por el parser HTTP de Node (${err.code || err.message}).${TINTA.reset} ` +
+        'Recuerda: solo se aceptan los verbos de http.METHODS.'
+    );
+    if (socket.destroyed || !socket.writable) return;
+    socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+  });
+}
+
+iniciar();
 
 function cerrar(motivo, codigo = 0) {
   if (cerrando) return;
   cerrando = true;
-  console.log(`\n${motivo}: cerrando servidor...`);
+  console.log(`\n${TINTA.amarillo}${motivo}: cerrando servidor...${TINTA.reset}`);
+
+  // Si la señal llega mientras todavia se estaba preguntando el puerto, el
+  // servidor ni siquiera existe: no hay nada que cerrar ni sesion que resumir.
+  if (!servidor) {
+    if (registro) registro.cerrar();
+    process.exit(codigo);
+    return;
+  }
 
   let rematado = false;
   const rematar = () => {
@@ -106,10 +177,12 @@ for (const senal of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK']) {
 
 // Aunque el proceso muera mal, lo que se vio por pantalla queda en el log.
 process.on('uncaughtException', (err) => {
-  console.error('Excepcion no capturada:', err);
+  console.error(`${TINTA.rojo}Excepcion no capturada:${TINTA.reset}`, err);
   cerrar('Excepcion no capturada', 1);
 });
 process.on('unhandledRejection', (err) => {
-  console.error('Promesa rechazada sin manejar:', err);
+  console.error(`${TINTA.rojo}Promesa rechazada sin manejar:${TINTA.reset}`, err);
 });
-process.on('exit', () => registro.cerrar());
+process.on('exit', () => {
+  if (registro) registro.cerrar();
+});

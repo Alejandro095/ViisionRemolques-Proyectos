@@ -1,6 +1,7 @@
 'use strict';
 
 const { formatearXml } = require('./formato-xml');
+const { TINTA } = require('./colores');
 
 const MAX_CARACTERES = Number(process.env.MAX_LOG_CUERPO) || 4000;
 
@@ -131,13 +132,13 @@ function describirCuerpo(meta, parseado, texto, archivosContenido) {
 function imprimirPeticion({ meta, carpeta, parseado, texto, archivosContenido = {} }) {
   const formato = meta.cuerpo.formatoParseado ? ` (${meta.cuerpo.formatoParseado})` : '';
 
-  console.log(`\n[${meta.recibidaEn}] ${meta.metodo} ${meta.url}`);
-  console.log(`  ID (carpeta): ${meta.id}`);
-  console.log(`  Guardado en:  ${carpeta}`);
-  console.log(`  IP:           ${meta.red.ip || meta.red.direccionRemota || 'desconocida'}`);
-  console.log(`  Content-Type: ${meta.cuerpo.contentType || '(ninguno)'}`);
-  console.log(`  Body${formato}:`);
-  console.log(indentar(describirCuerpo(meta, parseado, texto, archivosContenido)));
+  console.log(`\n${TINTA.bold}${TINTA.esmeralda}[${meta.recibidaEn}]${TINTA.reset} ${TINTA.blanco}${meta.metodo} ${meta.url}${TINTA.reset}`);
+  console.log(`  ${TINTA.grisOscuro}ID (carpeta):${TINTA.reset} ${TINTA.esmeralda}${meta.id}${TINTA.reset}`);
+  console.log(`  ${TINTA.grisOscuro}Guardado en:${TINTA.reset}  ${TINTA.blanco}${carpeta}${TINTA.reset}`);
+  console.log(`  ${TINTA.grisOscuro}IP:${TINTA.reset}           ${TINTA.blanco}${meta.red.ip || meta.red.direccionRemota || 'desconocida'}${TINTA.reset}`);
+  console.log(`  ${TINTA.grisOscuro}Content-Type:${TINTA.reset} ${TINTA.blanco}${meta.cuerpo.contentType || '(ninguno)'}${TINTA.reset}`);
+  console.log(`  ${TINTA.bold}${TINTA.esmeralda}Body${formato}:${TINTA.reset}`);
+  console.log(`${TINTA.grisClaro}${indentar(describirCuerpo(meta, parseado, texto, archivosContenido))}${TINTA.reset}`);
 }
 
 module.exports = { imprimirPeticion };

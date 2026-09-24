@@ -1,5 +1,7 @@
 'use strict';
 
+const { TINTA } = require('./colores');
+
 /** Content-type sin parametros: "multipart/form-data; boundary=xxx" -> "multipart/form-data". */
 function tipoBase(contentType) {
   if (!contentType) return '(ninguno)';
@@ -37,7 +39,11 @@ function tabla(contadores, total, sangria = '  ') {
   return filas
     .map(([clave, n]) => {
       const porcentaje = total > 0 ? ((n / total) * 100).toFixed(1) : '0.0';
-      return `${sangria}${clave.padEnd(anchoClave)}  ${String(n).padStart(anchoValor)}  (${porcentaje.padStart(5)}%)`;
+      return (
+        `${sangria}${TINTA.grisClaro}${clave.padEnd(anchoClave)}${TINTA.reset}  ` +
+        `${TINTA.esmeralda}${String(n).padStart(anchoValor)}${TINTA.reset}  ` +
+        `${TINTA.grisOscuro}(${porcentaje.padStart(5)}%)${TINTA.reset}`
+      );
     })
     .join('\n');
 }
@@ -72,8 +78,11 @@ function tablaConIds(grupos, total, sangria = '  ') {
   return filas
     .map(([clave, ids]) => {
       const porcentaje = total > 0 ? ((ids.length / total) * 100).toFixed(1) : '0.0';
-      const cabecera = `${sangria}${clave.padEnd(anchoClave)}  ${String(ids.length).padStart(anchoValor)}  (${porcentaje.padStart(5)}%)`;
-      return `${cabecera}\n${envolverIds(ids)}`;
+      const cabecera =
+        `${sangria}${TINTA.grisClaro}${clave.padEnd(anchoClave)}${TINTA.reset}  ` +
+        `${TINTA.esmeralda}${String(ids.length).padStart(anchoValor)}${TINTA.reset}  ` +
+        `${TINTA.grisOscuro}(${porcentaje.padStart(5)}%)${TINTA.reset}`;
+      return `${cabecera}\n${TINTA.grisOscuro}${envolverIds(ids)}${TINTA.reset}`;
     })
     .join('\n');
 }
@@ -108,18 +117,18 @@ function crearEstadisticas(idSesion) {
 
     imprimir() {
       const linea = '='.repeat(60);
-      console.log(`\n${linea}`);
-      console.log(`RESUMEN DE LA SESION ${idSesion}`);
-      console.log(linea);
-      console.log(`Duracion:           ${formatearDuracion(Date.now() - inicio)}`);
-      console.log(`Peticiones totales: ${total}`);
-      console.log(`Datos recibidos:    ${formatearBytes(bytes)}`);
-      console.log(`Archivos guardados: ${archivos}`);
-      console.log('\nPeticiones por IP:');
+      console.log(`\n${TINTA.esmeraldaOscura}${linea}${TINTA.reset}`);
+      console.log(`${TINTA.bold}${TINTA.esmeralda}RESUMEN DE LA SESION ${idSesion}${TINTA.reset}`);
+      console.log(`${TINTA.esmeraldaOscura}${linea}${TINTA.reset}`);
+      console.log(`${TINTA.grisOscuro}Duracion:${TINTA.reset}           ${TINTA.blanco}${formatearDuracion(Date.now() - inicio)}${TINTA.reset}`);
+      console.log(`${TINTA.grisOscuro}Peticiones totales:${TINTA.reset} ${TINTA.esmeralda}${total}${TINTA.reset}`);
+      console.log(`${TINTA.grisOscuro}Datos recibidos:${TINTA.reset}    ${TINTA.blanco}${formatearBytes(bytes)}${TINTA.reset}`);
+      console.log(`${TINTA.grisOscuro}Archivos guardados:${TINTA.reset} ${TINTA.esmeralda}${archivos}${TINTA.reset}`);
+      console.log(`\n${TINTA.bold}${TINTA.esmeralda}Peticiones por IP:${TINTA.reset}`);
       console.log(tabla(porIp, total));
-      console.log('\nPeticiones por Content-Type (con la carpeta de cada una):');
+      console.log(`\n${TINTA.bold}${TINTA.esmeralda}Peticiones por Content-Type (con la carpeta de cada una):${TINTA.reset}`);
       console.log(tablaConIds(porContentType, total));
-      console.log(`${linea}\n`);
+      console.log(`${TINTA.esmeraldaOscura}${linea}${TINTA.reset}\n`);
     },
   };
 }
