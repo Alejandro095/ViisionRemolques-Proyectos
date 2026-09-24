@@ -21,18 +21,27 @@ const DIR_PETICIONES = process.env.DIR_PETICIONES
   : path.join(__dirname, 'peticiones');
 const LIMITE_BYTES = Number(process.env.LIMITE_BYTES) || 1024 * 1024 * 1024; // 1 GB
 
+// Una unica interfaz readline para toda la sesion: crear/cerrar una nueva en
+// cada prompt (puerto, stop, renombrar/borrar) deja el stdin en un estado raro
+// entre medias (hay que pulsar Enter de mas). Se crea una vez y se reutiliza.
+let rl;
+function obtenerRL() {
+  if (!process.stdin.isTTY) return null;
+  if (!rl) rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return rl;
+}
+
 // Si PORT viene por entorno (scripts/CI) no se pregunta nada. Si hay terminal
 // interactiva se pregunta el puerto (Enter = el de por defecto): asi se pueden
 // levantar varias sesiones a la vez, cada una en su propio puerto.
 function preguntarPuerto() {
-  if (process.env.PORT || !process.stdin.isTTY) {
+  const interfaz = obtenerRL();
+  if (process.env.PORT || !interfaz) {
     return Promise.resolve(PUERTO_DEFECTO);
   }
 
   return new Promise((resolve) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.question(`${TINTA.grisOscuro}Puerto (Enter = ${PUERTO_DEFECTO}):${TINTA.reset} `, (respuesta) => {
-      rl.close();
+    interfaz.question(`${TINTA.grisOscuro}Puerto (Enter = ${PUERTO_DEFECTO}):${TINTA.reset} `, (respuesta) => {
       const texto = respuesta.trim();
       if (!texto) return resolve(PUERTO_DEFECTO);
 
@@ -50,6 +59,59 @@ let servidor;
 let registro;
 let estadisticas;
 let cerrando = false;
+let DIR_SESION_ACTUAL;
+
+function manejarLineaComando(linea) {
+  const comando = linea.trim().toLowerCase();
+  if (comando === 'stop' || comando === 'salir' || comando === 'exit') {
+    cerrar('Comando "stop" recibido');
+  }
+}
+
+// Al cerrar, si hay terminal interactiva, se ofrece renombrar o borrar la
+// carpeta de esta sesion. Enter = dejarla como esta.
+function preguntarAccionCarpeta(dirSesion) {
+  const interfaz = obtenerRL();
+  if (!interfaz) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    interfaz.question(
+      `${TINTA.grisOscuro}¿Renombrar (r) o borrar (b) la carpeta de esta sesion? (Enter = dejarla):${TINTA.reset} `,
+      (respuesta) => {
+        const opcion = respuesta.trim().toLowerCase();
+
+        if (opcion === 'b') {
+          try {
+            fs.rmSync(dirSesion, { recursive: true, force: true });
+            console.log(`${TINTA.amarillo}Carpeta borrada.${TINTA.reset}`);
+          } catch (err) {
+            console.error(`${TINTA.rojo}No se pudo borrar la carpeta:${TINTA.reset}`, err.message);
+          }
+          return resolve();
+        }
+
+        if (opcion === 'r') {
+          interfaz.question(`${TINTA.grisOscuro}Nuevo nombre:${TINTA.reset} `, (nombre) => {
+            const nuevoNombre = nombre.trim();
+            if (nuevoNombre) {
+              const destino = path.join(path.dirname(dirSesion), nuevoNombre);
+              try {
+                fs.renameSync(dirSesion, destino);
+                console.log(`${TINTA.amarillo}Carpeta renombrada a ${destino}${TINTA.reset}`);
+              } catch (err) {
+                console.error(`${TINTA.rojo}No se pudo renombrar la carpeta:${TINTA.reset}`, err.message);
+              }
+            }
+            resolve();
+          });
+          return;
+        }
+
+        resolve();
+      }
+    );
+  });
+}
 
 async function iniciar() {
   const PUERTO = await preguntarPuerto();
@@ -59,6 +121,7 @@ async function iniciar() {
   const ID_SESION = nanoid(12);
   const DIR_SESION = path.join(DIR_PETICIONES, ID_SESION);
   fs.mkdirSync(DIR_SESION, { recursive: true });
+  DIR_SESION_ACTUAL = DIR_SESION;
 
   registro = iniciarRegistro(path.join(DIR_SESION, 'log.txt'));
   estadisticas = crearEstadisticas(ID_SESION);
@@ -94,6 +157,15 @@ async function iniciar() {
     );
     console.log(`Guardando esta sesion en ${TINTA.blanco}${DIR_SESION}${TINTA.reset}`);
     console.log(`Log de esta sesion: ${TINTA.blanco}${path.join(DIR_SESION, 'log.txt')}${TINTA.reset}`);
+
+    // Alternativa a Ctrl+C: en cmd.exe (via npm) Ctrl+C abre el dialogo
+    // "Terminate batch job" y mata el proceso en seco sin pasar por cerrar().
+    // Escribiendo "stop" se evita ese lio por completo.
+    const interfaz = obtenerRL();
+    if (interfaz) {
+      console.log(`Escribe ${TINTA.esmeralda}stop${TINTA.reset} + Enter para detener el servidor.`);
+      interfaz.on('line', manejarLineaComando);
+    }
   });
 
   // El servidor nunca llego a arrancar (puerto ocupado, sin permisos...): no
@@ -139,13 +211,19 @@ iniciar();
 function cerrar(motivo, codigo = 0) {
   if (cerrando) return;
   cerrando = true;
+  if (rl) rl.removeListener('line', manejarLineaComando);
   console.log(`\n${TINTA.amarillo}${motivo}: cerrando servidor...${TINTA.reset}`);
+
+  const salir = () => preguntarAccionCarpeta(DIR_SESION_ACTUAL).then(() => {
+    if (rl) rl.close();
+    process.exit(codigo);
+  });
 
   // Si la señal llega mientras todavia se estaba preguntando el puerto, el
   // servidor ni siquiera existe: no hay nada que cerrar ni sesion que resumir.
   if (!servidor) {
     if (registro) registro.cerrar();
-    process.exit(codigo);
+    salir();
     return;
   }
 
@@ -157,7 +235,7 @@ function cerrar(motivo, codigo = 0) {
     // peticiones que todavia estaban en vuelo cuando llego la señal.
     estadisticas.imprimir();
     registro.cerrar(); // el log ya esta en disco (escrituras sincronas), esto solo lo remata
-    process.exit(codigo);
+    salir();
   };
 
   servidor.close(rematar);
