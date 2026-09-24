@@ -243,9 +243,9 @@ GO
 CREATE TABLE EventosPerimetrales (
     IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
     IdExterno                           BIGINT NULL,
-    PId                                 VARCHAR(64),
     IPCamara                            VARCHAR(45),
     Evento                              VARCHAR(50) NOT NULL,
+    ZonaDeteccion                       VARCHAR(500),
     ReglaId                             VARCHAR(64),
     TipoObjetivo                        VARCHAR(30) NULL,
     FechaEvento                         DATETIME2(2) NOT NULL DEFAULT GETDATE(),
@@ -255,16 +255,15 @@ CREATE TABLE EventosPerimetrales (
 );
 GO
 
-CREATE INDEX IX_Eventos_PId ON EventosPerimetrales (PId);
 CREATE INDEX IX_Eventos_PendientesSincronizar ON EventosPerimetrales (Sincronizado, FechaRegistro)
 WHERE Sincronizado = 0;
 GO
 
 CREATE PROCEDURE dbo.sp_EventosPerimetrales_Insertar
-    @PId               VARCHAR(64),
     @IPCamara          VARCHAR(45),
     @Evento            VARCHAR(50),
     @ReglaId           VARCHAR(64),
+    @ZonaDeteccion     VARCHAR(500) = NULL,
     @TipoObjetivo      VARCHAR(30) = NULL,
     @FechaEvento       DATETIME2(2) = NULL,
     @PathImagen        NVARCHAR(500) = NULL,
@@ -276,10 +275,10 @@ BEGIN
 
     INSERT INTO dbo.EventosPerimetrales (
         IdExterno,
-        PId,
         IPCamara,
         Evento,
         ReglaId,
+        ZonaDeteccion,
         TipoObjetivo,
         FechaEvento,
         PathImagen,
@@ -288,10 +287,10 @@ BEGIN
     )
     VALUES (
         @IdExterno,
-        @PId,
         @IPCamara,
         @Evento,
         @ReglaId,
+        @ZonaDeteccion,
         NULLIF(@TipoObjetivo, ''),
         ISNULL(@FechaEvento, SYSDATETIME()),
         @PathImagen,

@@ -77,13 +77,13 @@ namespace ViisionRemolques.Controllers
                     var carpeta = Path.Combine(_env.ContentRootPath, "AlertasPerimetrales", DateTime.UtcNow.ToString("yyyy-MM-dd"));
                     Directory.CreateDirectory(carpeta);
 
-                    var nombreArchivo = $"{evento.BaseInfo.PId ?? Guid.NewGuid().ToString("N")}.jpg";
+                    var nombreArchivo = $"{Guid.NewGuid().ToString("N")}.jpg";
                     pathImagen = Path.Combine(carpeta, nombreArchivo);
 
                     await System.IO.File.WriteAllBytesAsync(pathImagen, imagenes[0]);
                 }
 
-                if (evento is not null && evento.BaseInfo.EventType == "heartBeat" && evento.BaseInfo.EventType == "VMD")
+                if (evento is not null && (evento.BaseInfo.EventType == "heartBeat" || evento.BaseInfo.EventType == "VMD" || evento.BaseInfo.EventType == "duration"))
                 {
                     return Ok();
                 }
@@ -102,23 +102,19 @@ namespace ViisionRemolques.Controllers
                     return Ok();
                 }
 
-
-                if (evento.BaseInfo.VCAModo == Enums.VCAModoEnum.EventoSmart && evento.EventoSmart.RegionID is null)
-                {
-                    var hola = "hola mundo";
-                }
-
                 switch (evento.BaseInfo.VCAModo)
                 {
                     case Enums.VCAModoEnum.EventoSmart:
 
                         await _repo.InsertarAsync(new EventoPerimetral()
                         {
-                            PId = evento.BaseInfo.PId,
                             IPCamara = evento.BaseInfo.IpAddress,
-                            Evento = evento.BaseInfo.EventType,
-                            ReglaId = evento.EventoSmart.RegionID,
-                            TipoObjetivo = evento.EventoSmart.DetectionTarget,
+                            Evento = evento.BaseInfo.EventType ?? "",
+
+                            ReglaId = evento?.EventoSmart?.RegionID,
+                            ZonaDeteccion = evento?.EventoSmart?.RegionCoordinatesList,
+                            TipoObjetivo = evento?.EventoSmart?.DetectionTarget,
+
                             FechaEvento = DateTime.Now,
                             PathImagen = pathImagen
                         });

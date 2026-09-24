@@ -10,12 +10,18 @@ namespace ViisionRemolques.Parsing.Extractors
 
         private static readonly string[] EventosAplicables =
         [
-            "fielddetection",
-            "regionentrance",
-            "regionexiting",
-            "linedetection",
-            "unattendedBaggage",
-            "attendedBaggage"
+            "fielddetection", // Intrusiones (Entran a una area + Permanencer X tiempo)
+            "regionentrance", // Entran a una area
+            "regionexiting", // Salen de una area
+            "linedetection", // Cruce de linea
+            "loitering", // Merodeo
+            "parking", // Aparcamiento
+            "rapidMove", // Moviento rapido
+            "group", // Personas reunidas
+            "unattendedBaggage", // Equipaje desatendido
+            "attendedBaggage", // Eliminacion de objetos
+            //"VMD", // Video Motion Detection, no es modo de IA es solo detecion de moviento por PDI
+            "mixedTargetDetection", // Evento combinado ??? Verificar 
         ];
 
         public bool AplicaPara(string eventType, XDocument? doc = null) =>
@@ -25,8 +31,8 @@ namespace ViisionRemolques.Parsing.Extractors
         {
             evento.EventoSmart = new EventoSmartModel
             {
-                TargetID = doc.Buscar("//targetid", "//objectid"),
-                RegionID = doc.Buscar("//detectionregionentry/regionid", "//regionid", "//ruleid"),
+                RegionCoordinatesList = doc.BuscarInnerJson("//detectionregionentry/regioncoordinateslist"),
+                RegionID = doc.Buscar("//detectionregionentry/regionid"),
                 DetectionTarget = doc.Buscar("//detectiontarget", "//targettype")
             };
         }

@@ -13,7 +13,7 @@ namespace ViisionRemolques.Repositories
             _dbConnection = dbConnection;
         }
 
-        public async void InsertarAsync(Imagen imagen)
+        public async Task InsertarAsync(Imagen imagen)
         {
             var parameters = new DynamicParameters();
             parameters.Add("@OrigenTabla", imagen.OrigenTabla, DbType.String, ParameterDirection.Input, 50);

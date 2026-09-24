@@ -15,12 +15,9 @@ namespace ViisionRemolques.Parsing.Extractors
         {
             evento.BaseInfo = new CameraBaseInfoModel
             {
-                IpAddress = doc.Buscar("//ipaddress", "//ipv4address", "//srcaddress"),
-                // El evento real de un "duration" viene dentro; por eso esta regla va primero.
-                EventType = doc.Buscar("//durationlist/duration/relationevent", "//eventtype"),
-                RawEventType = doc.Buscar("//eventtype"),
+                IpAddress = doc.Buscar("//ipaddress"),
+                EventType = doc.Buscar("//eventtype"),
                 EventState = doc.Buscar("//eventstate"),
-                PId = doc.Buscar("//pid", "//picid"),
                 VCAModo = VCAModoEnum.Ninguno,
             };
         }

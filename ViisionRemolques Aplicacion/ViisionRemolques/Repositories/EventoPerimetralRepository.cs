@@ -13,19 +13,18 @@ namespace ViisionRemolques.Repositories
             _dbConnection = dbConnection;
         }
 
-        public async void InsertarAsync(EventoPerimetral evento)
+        public async Task InsertarAsync(EventoPerimetral evento)
         {
             var parameters = new DynamicParameters();
-            parameters.Add("@PId", evento.PId, DbType.String, ParameterDirection.Input, 64);
-            parameters.Add("@IPCamara", evento.IPCamara, DbType.String, ParameterDirection.Input, 45);
-            parameters.Add("@Evento", evento.Evento, DbType.String, ParameterDirection.Input, 50);
-            parameters.Add("@ReglaId", evento.ReglaId, DbType.String, ParameterDirection.Input, 64);
-            parameters.Add("@TipoObjetivo", evento.TipoObjetivo, DbType.String, ParameterDirection.Input, 30);
-            parameters.Add("@FechaEvento", evento.FechaEvento, DbType.DateTime2, ParameterDirection.Input);
-            parameters.Add("@PathImagen", evento.PathImagen, DbType.String, ParameterDirection.Input, 500);
-            parameters.Add("@IdExterno", evento.IdExterno, DbType.Int64, ParameterDirection.Input);
-            parameters.Add("@Sincronizado", evento.Sincronizado, DbType.Boolean, ParameterDirection.Input);
-            parameters.Add("@IdInternoGenerado", dbType: DbType.Int64, direction: ParameterDirection.Output);
+            parameters.Add("@IPCamara", evento.IPCamara, DbType.String);
+            parameters.Add("@Evento", evento.Evento, DbType.String);
+            parameters.Add("@ReglaId", evento.ReglaId, DbType.String);
+            parameters.Add("@ZonaDeteccion", evento.ZonaDeteccion, DbType.String);
+            parameters.Add("@TipoObjetivo", evento.TipoObjetivo, DbType.String);
+            parameters.Add("@FechaEvento", evento.FechaEvento, DbType.DateTime2);
+            parameters.Add("@PathImagen", evento.PathImagen, DbType.String);
+            parameters.Add("@IdExterno", evento.IdExterno, DbType.Int64);
+            parameters.Add("@Sincronizado", evento.Sincronizado, DbType.Boolean);
 
             await _dbConnection.ExecuteAsync(
                 "dbo.sp_EventosPerimetrales_Insertar",

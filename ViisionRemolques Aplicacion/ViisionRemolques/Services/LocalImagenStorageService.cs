@@ -11,14 +11,18 @@
         }
 
 
-        public async Task<string> GuardarImagenesAsync(List<byte[]> imagenes, string fileExtension = ".jpg")
-        {
-            if (imagenes.Count == 0) return null;
+        //public async Task<string?> GuardarImagenesAsync(List<byte[]> imagenes, string fileExtension = ".jpg")
+        //{
+        //    //if (imagenes.Count == 0) return null;
 
-            if (!fileExtension.StartsWith("."))
-            {
-                fileExtension = "." + fileExtension;
-            }
-        }
+        //    //if (!fileExtension.StartsWith("."))
+        //    //{
+        //    //    fileExtension = "." + fileExtension;
+        //    //}
+
+
+
+
+        //}
     }
 }
