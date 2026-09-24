@@ -15,20 +15,20 @@ namespace ViisionRemolques.Repositories
 
         public async Task InsertarAsync(EventoPerimetral evento)
         {
-            var parameters = new DynamicParameters();
-            parameters.Add("@IPCamara", evento.IPCamara, DbType.String);
-            parameters.Add("@Evento", evento.Evento, DbType.String);
-            parameters.Add("@ReglaId", evento.ReglaId, DbType.String);
-            parameters.Add("@ZonaDeteccion", evento.ZonaDeteccion, DbType.String);
-            parameters.Add("@TipoObjetivo", evento.TipoObjetivo, DbType.String);
-            parameters.Add("@FechaEvento", evento.FechaEvento, DbType.DateTime2);
-            parameters.Add("@PathImagen", evento.PathImagen, DbType.String);
-            parameters.Add("@IdExterno", evento.IdExterno, DbType.Int64);
-            parameters.Add("@Sincronizado", evento.Sincronizado, DbType.Boolean);
-
             await _dbConnection.ExecuteAsync(
                 "dbo.sp_EventosPerimetrales_Insertar",
-                parameters,
+                new
+                {
+                    IPCamara = evento.IPCamara,
+                    Evento = evento.Evento,
+                    RegionId = evento.RegionId,
+                    ZonaDeteccion = evento.ZonaDeteccion,
+                    TipoObjetivo = evento.TipoObjetivo,
+                    FechaEvento = evento.FechaEvento,
+                    PathImagen = evento.PathImagen,
+                    Sincronizado = evento.Sincronizado,
+                    Prioridad = evento.Prioridad
+                },
                 commandType: CommandType.StoredProcedure
             );
         }

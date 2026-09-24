@@ -18,6 +18,7 @@ namespace ViisionRemolques.Controllers
     {
         private readonly AlarmaDesconocidaLogRepository _alarmaDesconocidaLogRepository;
         private readonly EventoPerimetralRepository _repo;
+        private readonly EventoAlertaConteoPersonaRepository _eventoAlertaConteoPersonaRepository;
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<WebhookController> _logger;
 
@@ -26,6 +27,7 @@ namespace ViisionRemolques.Controllers
 
         public WebhookController(
             EventoPerimetralRepository repo,
+            EventoAlertaConteoPersonaRepository eventoAlertaConteoPersonaRepository,
             IWebHostEnvironment env,
             ILogger<WebhookController> logger,
             AlarmaDesconocidaLogRepository alarmasDesconocidasLogRepository,
@@ -38,6 +40,7 @@ namespace ViisionRemolques.Controllers
             _alarmaDesconocidaLogRepository = alarmasDesconocidasLogRepository;
             _almacenamientoImagenesService = almacenamientoImagenesService;
             _webhookPayloadExtractorService = webhookPayloadExtractorService;
+            _eventoAlertaConteoPersonaRepository = eventoAlertaConteoPersonaRepository;
         }
 
         [HttpPost]
@@ -59,7 +62,6 @@ namespace ViisionRemolques.Controllers
 
                 if (evento is not null && (
                     evento.BaseInfo.EventType == "heartBeat" || 
-                    evento.BaseInfo.EventType == "VMD" || 
                     evento.BaseInfo.EventType == "duration"))
                 {
                     return Ok();
@@ -88,12 +90,30 @@ namespace ViisionRemolques.Controllers
                             IPCamara = evento.BaseInfo.IpAddress,
                             Evento = evento.BaseInfo.EventType ?? "",
 
-                            ReglaId = evento?.EventoSmart?.RegionID,
+                            RegionId = evento?.EventoSmart?.RegionID,
                             ZonaDeteccion = evento?.EventoSmart?.RegionCoordinatesList,
                             TipoObjetivo = evento?.EventoSmart?.DetectionTarget,
 
                             FechaEvento = DateTime.Now,
-                            PathImagen = imagenesPaths.Count != 0 ? imagenesPaths[0] : null
+                            PathImagen = imagenesPaths.Count != 0 ? imagenesPaths[0] : null,
+
+                            Prioridad = (evento?.BaseInfo.EventType ?? "").Trim().ToLower() == "vmd" ? 10 : 5
+                        });
+                        break;
+                    case VCAModoEnum.AlarmaConteoPersonas:
+                        await _eventoAlertaConteoPersonaRepository.InsertarAsync(new EventoAlertaConteoPersonaEntity()
+                        {
+                            IPCamara = evento.BaseInfo.IpAddress,
+                            Evento = evento.BaseInfo.EventType ?? "",
+
+                            Regiones = evento.AlarmaConteoPersonas.Regiones,
+                            TotalEntradas = evento?.AlarmaConteoPersonas.TotalEntradas ?? "0",
+                            TotalSalidas = evento?.AlarmaConteoPersonas.TotalSalidas ?? "0",
+                            TotalPasos = evento?.AlarmaConteoPersonas.TotalPasos ?? "0",
+                            TotalDuplicados = evento?.AlarmaConteoPersonas.TotalDuplicados ?? "0",
+
+                            FechaEvento = DateTime.Now,
+                            Prioridad = 5
                         });
                         break;
                 }

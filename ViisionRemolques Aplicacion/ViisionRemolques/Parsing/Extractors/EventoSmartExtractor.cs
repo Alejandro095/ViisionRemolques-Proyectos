@@ -20,7 +20,7 @@ namespace ViisionRemolques.Parsing.Extractors
             "group", // Personas reunidas
             "unattendedBaggage", // Equipaje desatendido
             "attendedBaggage", // Eliminacion de objetos
-            //"VMD", // Video Motion Detection, no es modo de IA es solo detecion de moviento por PDI
+            "VMD", // Video Motion Detection, no es modo de IA es solo detecion de moviento por PDI
             "mixedTargetDetection", // Evento combinado ??? Verificar 
         ];
 
@@ -31,7 +31,7 @@ namespace ViisionRemolques.Parsing.Extractors
         {
             evento.EventoSmart = new EventoSmartModel
             {
-                RegionCoordinatesList = doc.BuscarInnerJson("//detectionregionentry/regioncoordinateslist"),
+                RegionCoordinatesList = doc.BuscarInnerArrayJson("//detectionregionentry/regioncoordinateslist"),
                 RegionID = doc.Buscar("//detectionregionentry/regionid"),
                 DetectionTarget = doc.Buscar("//detectiontarget", "//targettype")
             };

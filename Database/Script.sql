@@ -246,10 +246,11 @@ CREATE TABLE EventosPerimetrales (
     IPCamara                            VARCHAR(45),
     Evento                              VARCHAR(50) NOT NULL,
     ZonaDeteccion                       VARCHAR(500),
-    ReglaId                             VARCHAR(64),
+    RegionId                            VARCHAR(64),
     TipoObjetivo                        VARCHAR(30) NULL,
     FechaEvento                         DATETIME2(2) NOT NULL DEFAULT GETDATE(),
     PathImagen                          NVARCHAR(500) NULL,
+    Prioridad                           INT NOT NULL DEFAULT 5,
     Sincronizado                        BIT NOT NULL DEFAULT 0,
     FechaRegistro                       DATETIME NOT NULL DEFAULT GETDATE()
 );
@@ -262,10 +263,11 @@ GO
 CREATE PROCEDURE dbo.sp_EventosPerimetrales_Insertar
     @IPCamara          VARCHAR(45),
     @Evento            VARCHAR(50),
-    @ReglaId           VARCHAR(64),
-    @ZonaDeteccion     VARCHAR(500) = NULL,
+    @RegionId          VARCHAR(64),
+    @ZonaDeteccion     VARCHAR(MAX) = NULL,
     @TipoObjetivo      VARCHAR(30) = NULL,
     @FechaEvento       DATETIME2(2) = NULL,
+    @Prioridad         INT = NULL,
     @PathImagen        NVARCHAR(500) = NULL,
     @IdExterno         BIGINT = NULL,
     @Sincronizado      BIT = 0
@@ -277,11 +279,12 @@ BEGIN
         IdExterno,
         IPCamara,
         Evento,
-        ReglaId,
+        RegionId,
         ZonaDeteccion,
         TipoObjetivo,
         FechaEvento,
         PathImagen,
+        Prioridad,
         Sincronizado,
         FechaRegistro
     )
@@ -289,11 +292,82 @@ BEGIN
         @IdExterno,
         @IPCamara,
         @Evento,
-        @ReglaId,
+        @RegionId,
         @ZonaDeteccion,
         NULLIF(@TipoObjetivo, ''),
         ISNULL(@FechaEvento, SYSDATETIME()),
         @PathImagen,
+        @Prioridad,
+        @Sincronizado,
+        GETDATE()
+    );
+END
+GO
+
+--ALERTAS CONTEOS PERSONAS--------------------------------------------------------------//
+CREATE TABLE EventoAlertaConteoPersonas (
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    IdExterno                           BIGINT NULL,
+    IPCamara                            VARCHAR(45),
+    Evento                              VARCHAR(50) NOT NULL,
+    Regiones                            VARCHAR(MAX),
+    TotalEntradas                       INT DEFAULT 0,
+    TotalSalidas                        INT DEFAULT 0,
+    TotalPasos                          INT DEFAULT 0,
+    TotalDuplicados                     INT DEFAULT 0,
+    FechaEvento                         DATETIME2(2) NOT NULL DEFAULT GETDATE(),
+    Prioridad                           INT NOT NULL DEFAULT 5,
+    Sincronizado                        BIT NOT NULL DEFAULT 0,
+    FechaRegistro                       DATETIME NOT NULL DEFAULT GETDATE()
+);
+GO
+
+CREATE INDEX IX_EventoAlertaConteoPersonas_PendientesSincronizar
+ON dbo.EventoAlertaConteoPersonas (Sincronizado, FechaRegistro)
+WHERE Sincronizado = 0;
+GO
+
+CREATE PROCEDURE dbo.sp_EventoAlertaConteoPersonas_Insertar
+    @IPCamara          VARCHAR(45),
+    @Evento            VARCHAR(50),
+    @Regiones          VARCHAR(MAX) = NULL,
+    @TotalEntradas     INT = 0,
+    @TotalSalidas      INT = 0,
+    @TotalPasos        INT = 0,
+    @TotalDuplicados   INT = 0,
+    @FechaEvento       DATETIME2(2) = NULL,
+    @Prioridad         INT = NULL,
+    @IdExterno         BIGINT = NULL,
+    @Sincronizado      BIT = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO dbo.EventoAlertaConteoPersonas (
+        IdExterno,
+        IPCamara,
+        Evento,
+        Regiones,
+        TotalEntradas,
+        TotalSalidas,
+        TotalPasos,
+        TotalDuplicados,
+        FechaEvento,
+        Prioridad,
+        Sincronizado,
+        FechaRegistro
+    )
+    VALUES (
+        @IdExterno,
+        @IPCamara,
+        @Evento,
+        NULLIF(@Regiones, ''),
+        ISNULL(@TotalEntradas, 0),
+        ISNULL(@TotalSalidas, 0),
+        ISNULL(@TotalPasos, 0),
+        ISNULL(@TotalDuplicados, 0),
+        ISNULL(@FechaEvento, SYSDATETIME()),
+        ISNULL(@Prioridad, 5),
         @Sincronizado,
         GETDATE()
     );
