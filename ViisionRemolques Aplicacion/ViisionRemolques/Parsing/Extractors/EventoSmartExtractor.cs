@@ -31,9 +31,9 @@ namespace ViisionRemolques.Parsing.Extractors
         {
             evento.EventoSmart = new EventoSmartModel
             {
-                RegionCoordinatesList = doc.BuscarInnerArrayJson("//detectionregionentry/regioncoordinateslist"),
+                RegionCoordenadas = doc.BuscarInnerArrayJson("//detectionregionentry/regioncoordinateslist"),
                 RegionID = doc.Buscar("//detectionregionentry/regionid"),
-                DetectionTarget = doc.Buscar("//detectiontarget", "//targettype")
+                ObjetivoDetectadoTipo = doc.Buscar("//detectiontarget", "//targettype")
             };
         }
     }

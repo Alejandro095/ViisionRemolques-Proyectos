@@ -4,9 +4,9 @@ using ViisionRemolques.Parsing.Models;
 
 namespace ViisionRemolques.Parsing.Extractors
 {
-    public class EventoAlarmaConteoPersonasExtractor : ICameraEventSectionExtractor
+    public class EventoRecuentoPersonasExtractor : ICameraEventSectionExtractor
     {
-        public VCAModoEnum VCAModo { get; set; } = VCAModoEnum.AlarmaConteoPersonas;
+        public VCAModoEnum VCAModo { get; set; } = VCAModoEnum.RecuentoPersonas;
 
         private static readonly string[] EventosAplicables =
         [

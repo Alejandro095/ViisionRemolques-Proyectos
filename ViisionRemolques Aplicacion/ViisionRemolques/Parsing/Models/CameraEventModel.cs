@@ -1,3 +1,5 @@
+using ViisionRemolques.Parsing.Extractors;
+
 namespace ViisionRemolques.Parsing.Models
 {
     /// <summary>
@@ -9,6 +11,9 @@ namespace ViisionRemolques.Parsing.Models
         public CameraBaseInfoModel BaseInfo { get; set; } = new();
 
         public EventoSmartModel? EventoSmart { get; set; }
-        public AlarmaConteoPersonasModel AlarmaConteoPersonas{ get; set; }
+        public AlarmaConteoPersonasModel? AlarmaConteoPersonas{ get; set; }
+
+
+        public EventoAlarmaRecuentoPersonasExtractorModelo? EventoAlarmaRecuentoPersonas { get; set; }
     }
 }

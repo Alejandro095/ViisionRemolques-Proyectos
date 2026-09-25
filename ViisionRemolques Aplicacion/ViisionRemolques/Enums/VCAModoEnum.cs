@@ -22,7 +22,7 @@ namespace ViisionRemolques.Enums
         [Description("G")]
         CapturaFacial,
         [Description("H")]
-        AlarmaConteoPersonas,
+        AlarmaRecuentoPersonas,
         [Description("I")]
         RecuentoPersonas
     }   

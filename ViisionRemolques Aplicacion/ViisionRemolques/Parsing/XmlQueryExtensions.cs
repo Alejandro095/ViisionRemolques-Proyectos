@@ -77,7 +77,37 @@ namespace ViisionRemolques.Parsing
         }
 
 
+        public static string? BuscarXMLaJSONInnerArrayJSON(this XDocument doc, params string[] xpaths)
+        {
+            try
+            {
+                // Usa XPathSelectElements (en plural) para traer TODOS los nodos coincidentes
+                foreach (var xpath in xpaths)
+                {
+                    var elements = doc.XPathSelectElements(xpath).ToList();
 
+                    if (elements.Count == 0) continue;
+
+                    var jArray = new JArray();
+
+                    foreach (var element in elements)
+                    {
+                        // Convierte cada <region>...</region> a un objeto JSON
+                        var jsonString = JsonConvert.SerializeXNode(element, Formatting.None, omitRootObject: true);
+                        var token = JToken.Parse(jsonString);
+                        jArray.Add(token);
+                    }
+
+                    return jArray.ToString(Formatting.None);
+                }
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
     }
 }

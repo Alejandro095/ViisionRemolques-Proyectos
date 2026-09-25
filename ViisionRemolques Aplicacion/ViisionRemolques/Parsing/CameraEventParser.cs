@@ -14,7 +14,8 @@ namespace ViisionRemolques.Parsing
         private static readonly List<ICameraEventSectionExtractor> Extractores =
         [
             new EventoSmartExtractor(),
-            new EventoAlarmaConteoPersonasExtractor()
+            new EventoAlarmaRecuentoPersonasExtractor(),
+            new EventoRecuentoPersonasExtractor()
         ];
 
         /// <returns>
