@@ -4,13 +4,13 @@ using ViisionRemolques.Parsing.Models;
 
 namespace ViisionRemolques.Parsing.Extractors
 {
-    public class EventoRecuentoPersonasExtractor : ICameraEventSectionExtractor
+    public class EventoDeteccionTipoMultiobjetivoExtractor : ICameraEventSectionExtractor
     {
         public VCAModoEnum VCAModo { get; set; } = VCAModoEnum.RecuentoPersonas;
 
         private static readonly string[] EventosAplicables =
         [
-            "peoplecounting"
+            "mixedTargetDetection"
         ];
 
         public bool AplicaPara(string eventType, XDocument? doc = null) =>

@@ -21,7 +21,7 @@ namespace ViisionRemolques.Parsing.Extractors
             "unattendedBaggage", // Equipaje desatendido
             "attendedBaggage", // Eliminacion de objetos
             "VMD", // Video Motion Detection, no es modo de IA es solo detecion de moviento por PDI
-            "mixedTargetDetection", // Evento combinado ??? Verificar 
+            //"mixedTargetDetection", // Evento combinado ??? Verificar Actualizacion: Al parecer es un evento de IP camara reconocimiento facial
         ];
 
         public bool AplicaPara(string eventType, XDocument? doc = null) =>

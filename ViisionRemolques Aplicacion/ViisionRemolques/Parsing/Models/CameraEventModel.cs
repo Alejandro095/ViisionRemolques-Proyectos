@@ -12,8 +12,7 @@ namespace ViisionRemolques.Parsing.Models
 
         public EventoSmartModel? EventoSmart { get; set; }
         public AlarmaConteoPersonasModel? AlarmaConteoPersonas{ get; set; }
-
-
         public EventoAlarmaRecuentoPersonasExtractorModelo? EventoAlarmaRecuentoPersonas { get; set; }
+        public EventoCapturaFacialExtractorModelo? EventoCapturaFacial { get; set; }
     }
 }
