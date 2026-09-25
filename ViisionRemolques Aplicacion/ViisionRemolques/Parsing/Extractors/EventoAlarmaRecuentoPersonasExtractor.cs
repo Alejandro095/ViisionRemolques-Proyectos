@@ -59,4 +59,13 @@ namespace ViisionRemolques.Parsing.Extractors
     {
         public static readonly string PersonDensityDetection = "persondensitydetection";
     }
+
+    public static class EventoAlarmaRecuentoPersonasAlgoritmosEnum
+    {
+        public static readonly string DSA = "DSA";
+        public static readonly string PQA = "PQA";
+        public static readonly string PDC = "PDC";
+        public static readonly string Trigger = "trigger";
+        public static readonly string Timing = "timing";
+    }
 }

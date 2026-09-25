@@ -6,7 +6,7 @@ namespace ViisionRemolques.Parsing.Extractors
 {
     public class EventoTraficoRodadoExtractor : ICameraEventSectionExtractor
     {
-        public VCAModoEnum VCAModo { get; set; } = VCAModoEnum.EventoSmart;
+        public VCAModoEnum VCAModo { get; set; } = VCAModoEnum.TraficoRodado;
 
         private static readonly string[] EventosAplicables =
         [
@@ -19,13 +19,20 @@ namespace ViisionRemolques.Parsing.Extractors
 
         public void Extraer(XDocument doc, EventoExtractorModelo evento)
         {
+            int traficoEstadisticasVehiculos = 0;
+            int traficoEstadisticasMotocicletas = 0;
+
+
+
+
             evento.EventoTraficoRodado = new EventoTraficoRodadoExtractorModelo
             {
                 Matricula = doc.Buscar("//anpr/licenseplate"),
                 VehiculoDosRuedas = doc.Buscar("//anpr/twowheelvehicle"),
                 VehiculoTresRuedas = doc.Buscar("//anpr/threewheelvehicle"),
 
-
+                TraficoEstadisticasVehiculos = 0,
+                TraficoEstadisticasMotocicletas = 0
             };
         }
     }
@@ -35,6 +42,9 @@ namespace ViisionRemolques.Parsing.Extractors
         public string? Matricula { get; set; }
         public string? VehiculoDosRuedas { get; set; }
         public string? VehiculoTresRuedas { get; set; }
+
+        public int? TraficoEstadisticasVehiculos { get; set; }
+        public int? TraficoEstadisticasMotocicletas { get; set; }
     }
 
     public static class EventoTraficoRodadoEnum
