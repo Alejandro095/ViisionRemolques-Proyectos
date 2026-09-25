@@ -3,24 +3,24 @@ using ViisionRemolques.Enums;
 using ViisionRemolques.Parsing.Models;
 
 namespace ViisionRemolques.Parsing.Extractors
-{
+{    
     public class EventoSmartExtractor : ICameraEventSectionExtractor
     {
         public VCAModoEnum VCAModo { get; set; } = VCAModoEnum.EventoSmart;
 
         private static readonly string[] EventosAplicables =
         [
-            "fielddetection", // Intrusiones (Entran a una area + Permanencer X tiempo)
-            "regionentrance", // Entran a una area
-            "regionexiting", // Salen de una area
-            "linedetection", // Cruce de linea
-            "loitering", // Merodeo
-            "parking", // Aparcamiento
-            "rapidMove", // Moviento rapido
-            "group", // Personas reunidas
-            "unattendedBaggage", // Equipaje desatendido
-            "attendedBaggage", // Eliminacion de objetos
-            "VMD", // Video Motion Detection, no es modo de IA es solo detecion de moviento por PDI
+            EventoSmartEnum.Intruciones,
+            EventoSmartEnum.EntradaRegion,
+            EventoSmartEnum.SalidaRegion,
+            EventoSmartEnum.CruceLinea,
+            EventoSmartEnum.Merodeo,
+            EventoSmartEnum.Estacionamiento,
+            EventoSmartEnum.MovimientoRapido,
+            EventoSmartEnum.PersonasReunidas,
+            EventoSmartEnum.EquipajeDesatendido,
+            EventoSmartEnum.ObjectoRemovido,
+            EventoSmartEnum.VideoMotionDetection,
             //"mixedTargetDetection", // Evento combinado ??? Verificar Actualizacion: Al parecer es un evento de IP camara reconocimiento facial
         ];
 
@@ -44,4 +44,20 @@ namespace ViisionRemolques.Parsing.Extractors
         public string? RegionID { get; set; }
         public string? ObjetivoDetectadoTipo { get; set; }
     }
+
+    public static class EventoSmartEnum
+    {
+        public static readonly string Intruciones = "fielddetection";
+        public static readonly string SalidaRegion = "regionentrance";
+        public static readonly string EntradaRegion = "regionentrance";
+        public static readonly string CruceLinea = "linedetection";
+        public static readonly string Merodeo = "loitering";
+        public static readonly string Estacionamiento = "parking";
+        public static readonly string MovimientoRapido = "rapidMove";
+        public static readonly string PersonasReunidas = "group";
+        public static readonly string EquipajeDesatendido = "unattendedBaggage";
+        public static readonly string ObjectoRemovido = "attendedBaggage";
+        public static readonly string VideoMotionDetection = "VMD";
+    }
+
 }

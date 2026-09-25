@@ -10,7 +10,7 @@ namespace ViisionRemolques.Parsing.Extractors
 
         private static readonly string[] EventosAplicables =
         [
-            "mixedTargetDetection"
+            EventoDeteccionTipoMultiobjetivoEnum.MixedTargetDetection
         ];
 
         public bool AplicaPara(string eventType, XDocument? doc = null) =>
@@ -28,5 +28,10 @@ namespace ViisionRemolques.Parsing.Extractors
             //    Regiones = doc.BuscarInnerArrayJson("//regionlist"),
             //};
         }
+    }
+
+    public static class EventoDeteccionTipoMultiobjetivoEnum
+    {
+        public static readonly string MixedTargetDetection = "mixedTargetDetection";
     }
 }

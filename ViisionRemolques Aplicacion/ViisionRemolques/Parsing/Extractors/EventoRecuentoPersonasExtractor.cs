@@ -10,7 +10,7 @@ namespace ViisionRemolques.Parsing.Extractors
 
         private static readonly string[] EventosAplicables =
         [
-            "peoplecounting"
+            EventoRecuentoPersonasEnum.RecuentoPersonas
         ];
 
         public bool AplicaPara(string eventType, XDocument? doc = null) =>
@@ -38,5 +38,10 @@ namespace ViisionRemolques.Parsing.Extractors
         public string? TotalPasos { get; set; }
         public string? TotalDuplicados { get; set; }
 
+    }
+
+    public static class EventoRecuentoPersonasEnum
+    {
+        public static readonly string RecuentoPersonas = "peoplecounting";
     }
 }

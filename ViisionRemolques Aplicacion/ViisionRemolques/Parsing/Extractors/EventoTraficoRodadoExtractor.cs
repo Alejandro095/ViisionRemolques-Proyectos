@@ -10,7 +10,8 @@ namespace ViisionRemolques.Parsing.Extractors
 
         private static readonly string[] EventosAplicables =
         [
-            "ANPR"
+            EventoTraficoRodadoEnum.ANPR,
+            EventoTraficoRodadoEnum.TPSRealTime,
         ];
 
         public bool AplicaPara(string eventType, XDocument? doc = null) =>
@@ -21,6 +22,10 @@ namespace ViisionRemolques.Parsing.Extractors
             evento.EventoTraficoRodado = new EventoTraficoRodadoExtractorModelo
             {
                 Matricula = doc.Buscar("//anpr/licenseplate"),
+                VehiculoDosRuedas = doc.Buscar("//anpr/twowheelvehicle"),
+                VehiculoTresRuedas = doc.Buscar("//anpr/threewheelvehicle"),
+
+
             };
         }
     }
@@ -28,5 +33,13 @@ namespace ViisionRemolques.Parsing.Extractors
     public class EventoTraficoRodadoExtractorModelo
     {
         public string? Matricula { get; set; }
+        public string? VehiculoDosRuedas { get; set; }
+        public string? VehiculoTresRuedas { get; set; }
+    }
+
+    public static class EventoTraficoRodadoEnum
+    {
+        public static readonly string ANPR = "ANRP";
+        public static readonly string TPSRealTime = "TPSRealTime";
     }
 }

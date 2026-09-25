@@ -10,7 +10,7 @@ namespace ViisionRemolques.Parsing.Extractors
 
         private static readonly string[] EventosAplicables =
         [
-            "faceCapture"
+            EventoCapturaFacialEnum.CapturaFacial
         ];
 
         public bool AplicaPara(string eventType, XDocument? doc = null) =>
@@ -28,5 +28,10 @@ namespace ViisionRemolques.Parsing.Extractors
     public class EventoCapturaFacialExtractorModelo
     {
         public string? CoordenadasRostros { get; set; }
+    }
+
+    public static class EventoCapturaFacialEnum
+    {
+        public static readonly string CapturaFacial = "faceCapture";
     }
 }

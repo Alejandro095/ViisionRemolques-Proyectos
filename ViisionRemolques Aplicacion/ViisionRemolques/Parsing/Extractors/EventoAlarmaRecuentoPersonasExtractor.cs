@@ -10,7 +10,7 @@ namespace ViisionRemolques.Parsing.Extractors
 
         private static readonly string[] EventosAplicables =
         [
-            "persondensitydetection"
+            EventoAlarmaRecuentoPersonasEnum.PersonDensityDetection
         ];
 
         public bool AplicaPara(string eventType, XDocument? doc = null) =>
@@ -53,5 +53,10 @@ namespace ViisionRemolques.Parsing.Extractors
         public string? NombreNivelDensidad { get; set; }
         public string? DireccionCambioDensidad { get; set; }
 
+    }
+
+    public static class EventoAlarmaRecuentoPersonasEnum
+    {
+        public static readonly string PersonDensityDetection = "persondensitydetection";
     }
 }
