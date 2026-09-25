@@ -20,6 +20,6 @@ namespace ViisionRemolques.Parsing
         bool AplicaPara(string eventType, XDocument? doc = null);
 
         /// <summary>Extrae su fragmento de datos y lo asigna al evento.</summary>
-        void Extraer(XDocument doc, CameraEventModel evento);
+        void Extraer(XDocument doc, EventoExtractorModelo evento);
     }
 }

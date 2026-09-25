@@ -16,9 +16,9 @@ namespace ViisionRemolques.Parsing.Extractors
         public bool AplicaPara(string eventType, XDocument? doc = null) =>
             EventosAplicables.Contains(eventType, StringComparer.OrdinalIgnoreCase);
 
-        public void Extraer(XDocument doc, CameraEventModel evento)
+        public void Extraer(XDocument doc, EventoExtractorModelo evento)
         {
-            evento.AlarmaConteoPersonas = new AlarmaConteoPersonasModel
+            evento.AlarmaConteoPersonas = new EventoRecuentoPersonasExtractorModelo
             {                
                 TotalEntradas = doc.Buscar("//peoplecounting/enter"),
                 TotalSalidas = doc.Buscar("//peoplecounting/exit"),
@@ -28,5 +28,15 @@ namespace ViisionRemolques.Parsing.Extractors
                 Regiones = doc.BuscarInnerArrayJson("//regionlist"),
             };
         }
+    }
+
+    public class EventoRecuentoPersonasExtractorModelo
+    {
+        public string? Regiones { get; set; }
+        public string? TotalEntradas { get; set; }
+        public string? TotalSalidas { get; set; }
+        public string? TotalPasos { get; set; }
+        public string? TotalDuplicados { get; set; }
+
     }
 }

@@ -27,14 +27,21 @@ namespace ViisionRemolques.Parsing.Extractors
         public bool AplicaPara(string eventType, XDocument? doc = null) =>
             EventosAplicables.Contains(eventType, StringComparer.OrdinalIgnoreCase);
 
-        public void Extraer(XDocument doc, CameraEventModel evento)
+        public void Extraer(XDocument doc, EventoExtractorModelo evento)
         {
-            evento.EventoSmart = new EventoSmartModel
+            evento.EventoSmart = new EventoSmartExtractorModelo
             {
                 RegionCoordenadas = doc.BuscarInnerArrayJson("//detectionregionentry/regioncoordinateslist"),
                 RegionID = doc.Buscar("//detectionregionentry/regionid"),
                 ObjetivoDetectadoTipo = doc.Buscar("//detectiontarget", "//targettype")
             };
         }
+    }
+
+    public class EventoSmartExtractorModelo
+    {
+        public string? RegionCoordenadas { get; set; }
+        public string? RegionID { get; set; }
+        public string? ObjetivoDetectadoTipo { get; set; }
     }
 }

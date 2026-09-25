@@ -9,7 +9,7 @@ namespace ViisionRemolques.Parsing
     /// </summary>
     public static class CameraEventParser
     {
-        private static readonly BaseInfoExtractor InfoBase = new();
+        private static readonly EventoBaseExtractor InfoBase = new();
 
         private static readonly List<ICameraEventSectionExtractor> Extractores =
         [
@@ -17,23 +17,24 @@ namespace ViisionRemolques.Parsing
             new EventoAlarmaRecuentoPersonasExtractor(),
             new EventoRecuentoPersonasExtractor(),
             new EventoCapturaFacialExtractor(),
+            new EventoDeteccionTipoMultiobjetivoExtractor(),
         ];
 
         /// <returns>
         /// El evento interpretado, o <c>null</c> si el cuerpo no se pudo leer.
         /// Nunca lanza: un payload ilegible no debe tumbar el webhook.
         /// </returns>
-        public static CameraEventModel? Parse(string? cuerpo)
+        public static EventoExtractorModelo? Parse(string? cuerpo)
         {
             var doc = CameraPayloadLoader.ToNormalizedXml(cuerpo);
 
             if (doc is null) return null;
 
-            var evento = new CameraEventModel();
+            var evento = new EventoExtractorModelo();
 
             InfoBase.Extraer(doc, evento);
 
-            var tipoEvento = evento.BaseInfo.EventType ?? string.Empty;
+            var tipoEvento = evento.Evento.EventType ?? string.Empty;
 
             foreach (var extractor in Extractores)
             {
@@ -41,7 +42,7 @@ namespace ViisionRemolques.Parsing
                 {
                     extractor.Extraer(doc, evento);
 
-                    evento.BaseInfo.VCAModo = extractor.VCAModo;
+                    evento.Evento.VCAModo = extractor.VCAModo;
 
                     break;
                 }

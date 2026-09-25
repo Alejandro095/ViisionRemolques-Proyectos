@@ -4,13 +4,13 @@ using ViisionRemolques.Parsing.Models;
 
 namespace ViisionRemolques.Parsing.Extractors
 {
-    public class EventoCapturaFacialExtractor : ICameraEventSectionExtractor
+    public class EventoTraficoRodadoExtractor : ICameraEventSectionExtractor
     {
-        public VCAModoEnum VCAModo { get; set; } = VCAModoEnum.CapturaFacial;
+        public VCAModoEnum VCAModo { get; set; } = VCAModoEnum.EventoSmart;
 
         private static readonly string[] EventosAplicables =
         [
-            "faceCapture"
+            "ANPR"
         ];
 
         public bool AplicaPara(string eventType, XDocument? doc = null) =>
@@ -18,15 +18,15 @@ namespace ViisionRemolques.Parsing.Extractors
 
         public void Extraer(XDocument doc, EventoExtractorModelo evento)
         {
-            evento.EventoCapturaFacial = new EventoCapturaFacialExtractorModelo
+            evento.EventoTraficoRodado = new EventoTraficoRodadoExtractorModelo
             {
-                CoordenadasRostros = doc.BuscarXMLaJSONInnerArrayJSON("//facecapture//faces/facerect"),
+                Matricula = doc.Buscar("//anpr/licenseplate"),
             };
         }
     }
 
-    public class EventoCapturaFacialExtractorModelo
+    public class EventoTraficoRodadoExtractorModelo
     {
-        public string? CoordenadasRostros { get; set; }
+        public string? Matricula { get; set; }
     }
 }

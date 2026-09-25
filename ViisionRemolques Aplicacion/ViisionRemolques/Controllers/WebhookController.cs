@@ -58,24 +58,24 @@ namespace ViisionRemolques.Controllers
                     return BadRequest();
                 }
 
-                CameraEventModel? evento = CameraEventParser.Parse(webhookPayload.Body);
+                EventoExtractorModelo? evento = CameraEventParser.Parse(webhookPayload.Body);
 
                 var imagenesPaths = await _almacenamientoImagenesService.Guardar(webhookPayload.Imagenes);
 
                 if (evento is not null && (
-                    evento.BaseInfo.EventType == "heartBeat" || 
-                    evento.BaseInfo.EventType == "duration"))
+                    evento.Evento.EventType == "heartBeat" || 
+                    evento.Evento.EventType == "duration"))
                 {
                     return Ok();
                 }
 
-                if (evento is null || evento.BaseInfo.VCAModo == VCAModoEnum.Ninguno)
+                if (evento is null || evento.Evento.VCAModo == VCAModoEnum.Ninguno)
                 {
                     await _alarmaDesconocidaLogRepository.InsertarAsync(new AlarmaDesonocidaLogEntity()
                     {
                         IPCamara = HttpContext.Connection.RemoteIpAddress?.ToString(),
                         ContentType = Request.ContentType,
-                        Evento = evento?.BaseInfo.EventType ?? null,
+                        Evento = evento?.Evento.EventType ?? null,
                         Body = webhookPayload.Body,
                         Motivo = evento is null ? "PARSEO_ERROR" : "EXTRACTOR_DETALLES_ERROR"
                     });
@@ -142,14 +142,14 @@ namespace ViisionRemolques.Controllers
                 //    }
                 //}
 
-                switch (evento.BaseInfo.VCAModo)
+                switch (evento.Evento.VCAModo)
                 {
                     case VCAModoEnum.EventoSmart:
 
                         await _repo.InsertarAsync(new EventoPerimetral()
                         {
-                            IPCamara = evento.BaseInfo.IpAddress,
-                            Evento = evento.BaseInfo.EventType ?? "",
+                            IPCamara = evento.Evento.IpAddress,
+                            Evento = evento.Evento.EventType ?? "",
 
                             RegionId = evento?.EventoSmart?.RegionID,
                             ZonaDeteccion = evento?.EventoSmart?.RegionCoordenadas,
@@ -158,14 +158,14 @@ namespace ViisionRemolques.Controllers
                             FechaEvento = DateTime.Now,
                             PathImagen = imagenesPaths.Count != 0 ? imagenesPaths[0] : null,
 
-                            Prioridad = (evento?.BaseInfo.EventType ?? "").Trim().ToLower() == "vmd" ? 10 : 5
+                            Prioridad = (evento?.Evento.EventType ?? "").Trim().ToLower() == "vmd" ? 10 : 5
                         });
                         break;
                     case VCAModoEnum.RecuentoPersonas:
                         await _eventoAlertaConteoPersonaRepository.InsertarAsync(new EventoAlertaConteoPersonaEntity()
                         {
-                            IPCamara = evento.BaseInfo.IpAddress,
-                            Evento = evento.BaseInfo.EventType ?? "",
+                            IPCamara = evento.Evento.IpAddress,
+                            Evento = evento.Evento.EventType ?? "",
 
                             Regiones = evento.AlarmaConteoPersonas.Regiones,
                             TotalEntradas = evento?.AlarmaConteoPersonas.TotalEntradas ?? "0",
