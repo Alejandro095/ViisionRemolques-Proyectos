@@ -20,6 +20,7 @@ namespace ViisionRemolques.Parsing
             new EventoDeteccionTipoMultiobjetivoExtractor(),
             new EventoANPRExtractor(),
             new EventoArmadoPistaPersonaExtractor(),
+            new EventoTraficoRodadoExtractor(),
         ];
 
         /// <returns>

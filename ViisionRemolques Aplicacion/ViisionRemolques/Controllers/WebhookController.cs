@@ -70,7 +70,7 @@ namespace ViisionRemolques.Controllers
                     return Ok();
                 }
 
-                if (evento.Evento.VCAModo == VCAModoEnum.ArmadoPistaPersona)
+                if (evento.Evento.VCAModo == VCAModoEnum.TraficoRodado)
                 {
                     var ds = "Ds";
                     var dsds = ds;
