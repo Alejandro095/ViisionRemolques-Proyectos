@@ -26,6 +26,11 @@ namespace ViisionRemolques.Parsing.Extractors
                 VehiculoDosRuedas = doc.Buscar("//anpr/twowheelvehicle"),
                 VehiculoTresRuedas = doc.Buscar("//anpr/threewheelvehicle"),
 
+                VehiculoColor = doc.Buscar("//anpr/vehicleinfo/color"),
+                VehiculoTipo = doc.Buscar("//anpr/vehicletype"),
+
+                ListaNombre = doc.Buscar("//anpr/vehiclelistname"),
+
                 Radar = !string.IsNullOrEmpty(VelocidadVehiculo),
                 Velocidad = VelocidadVehiculo,
             };
@@ -37,6 +42,10 @@ namespace ViisionRemolques.Parsing.Extractors
         public string? Matricula { get; set; }
         public string? VehiculoDosRuedas { get; set; }
         public string? VehiculoTresRuedas { get; set; }
+
+        public string? VehiculoTipo { get; set; }
+        public string? VehiculoColor { get; set; }
+        public string? NombreLista { get; set; }
 
         public bool Radar { get; set; }
         public string? Velocidad { get; set; }
