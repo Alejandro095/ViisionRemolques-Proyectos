@@ -29,6 +29,9 @@ namespace ViisionRemolques.Parsing.Extractors
                 VehiculoColor = doc.Buscar("//anpr/vehicleinfo/color"),
                 VehiculoTipo = doc.Buscar("//anpr/vehicletype"),
 
+                Direccion = doc.Buscar("//anpr/direction"),
+                NumeroCarril = doc.Buscar("//anpr/line"),
+
                 NombreLista = doc.Buscar("//anpr/vehiclelistname"),
 
                 Radar = !string.IsNullOrEmpty(VelocidadVehiculo),
@@ -45,6 +48,8 @@ namespace ViisionRemolques.Parsing.Extractors
 
         public string? VehiculoTipo { get; set; }
         public string? VehiculoColor { get; set; }
+        public string? Direccion { get; set; }
+        public string? NumeroCarril { get; set; }
         public string? NombreLista { get; set; }
 
         public bool Radar { get; set; }

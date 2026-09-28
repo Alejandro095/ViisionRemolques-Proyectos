@@ -31,7 +31,7 @@ namespace ViisionRemolques.Parsing.Extractors
                     elementoCaptura.Humano = new EventoDeteccionTipoMultiobjectivoTipoHumanoExtractorModelo
                     {
                         Edad = ObtenerPropiedad(nodoHumano, "age"),
-                        Expresion = ObtenerPropiedad(nodoHumano, "faceExpression"),
+                        ExpresionFacial = ObtenerPropiedad(nodoHumano, "faceExpression"),
                         ColorChaqueta = ObtenerPropiedad(nodoHumano, "jacketColor"),
                         Lentes = ObtenerPropiedad(nodoHumano, "glass"),
                         Genero = ObtenerPropiedad(nodoHumano, "gender"),
@@ -90,7 +90,7 @@ namespace ViisionRemolques.Parsing.Extractors
     public class EventoDeteccionTipoMultiobjectivoTipoHumanoExtractorModelo
     {
         public string? Edad { get; set; }
-        public string? Expresion { get; set; }
+        public string? ExpresionFacial { get; set; }
         public string? ColorChaqueta { get; set; }
         public string? Lentes { get; set; }
         public string? Genero { get; set; }

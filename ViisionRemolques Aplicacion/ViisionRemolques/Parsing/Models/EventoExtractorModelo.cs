@@ -11,6 +11,8 @@ namespace ViisionRemolques.Parsing.Models
         public EventoCapturaFacialExtractorModelo? EventoCapturaFacial { get; set; }
         public EventoTraficoRodadoExtractorModelo? EventoTraficoRodado { get; set; }
         public EventoANPRExtractorModelo? EventoANPR { get; set; }
+
         public List<EventoDeteccionTipoMultiobjectivoExtractorModelo> EventosDeteccionTipoMultiobjectivo = new List<EventoDeteccionTipoMultiobjectivoExtractorModelo>();
+        public List<EventoArmadoPistaPersonaExtractorModelo> EventosArmadoPistaPersona = new List<EventoArmadoPistaPersonaExtractorModelo>();
     }
 }

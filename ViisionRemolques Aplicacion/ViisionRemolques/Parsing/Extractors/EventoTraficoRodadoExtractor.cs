@@ -10,7 +10,6 @@ namespace ViisionRemolques.Parsing.Extractors
 
         private static readonly string[] EventosAplicables =
         [
-            EventoTraficoRodadoEnum.ANPR,
             EventoTraficoRodadoEnum.TPSRealTime,
         ];
 
@@ -49,7 +48,6 @@ namespace ViisionRemolques.Parsing.Extractors
 
     public static class EventoTraficoRodadoEnum
     {
-        public static readonly string ANPR = "ANRP";
         public static readonly string TPSRealTime = "TPSRealTime";
     }
 }

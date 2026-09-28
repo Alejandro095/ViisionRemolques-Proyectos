@@ -70,18 +70,24 @@ namespace ViisionRemolques.Controllers
                     return Ok();
                 }
 
-                if (evento.Evento.VCAModo == VCAModoEnum.DeteccionTipoMultiObjetivo)
+                if (evento.Evento.VCAModo == VCAModoEnum.ArmadoPistaPersona)
                 {
-                    foreach (var deteccion in evento.EventosDeteccionTipoMultiobjectivo)
-                    {
-                        if (deteccion.Tipo == EventoDeteccionTipoMultiobjetivoTiposEnum.Humano && deteccion.Humano.DeteccionFacial)
-                        {
-                            var DT1 = deteccion.Humano.DeteccionFacialId;
-
-                            var hola = "mundo!";
-                        }
-                    }
+                    var ds = "Ds";
+                    var dsds = ds;
                 }
+
+                //if (evento.Evento.VCAModo == VCAModoEnum.DeteccionTipoMultiObjetivo)
+                //{
+                //    foreach (var deteccion in evento.EventosDeteccionTipoMultiobjectivo)
+                //    {
+                //        if (deteccion.Tipo == EventoDeteccionTipoMultiobjetivoTiposEnum.Humano && deteccion.Humano.DeteccionFacial)
+                //        {
+                //            var DT1 = deteccion.Humano.DeteccionFacialId;
+
+                //            var hola = "mundo!";
+                //        }
+                //    }
+                //}
 
                 if (evento is null || evento.Evento.VCAModo == VCAModoEnum.Ninguno)
                 {
