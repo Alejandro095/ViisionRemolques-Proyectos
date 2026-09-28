@@ -8,6 +8,22 @@ namespace ViisionRemolques.Parsing
 {
     public static class XmlQueryExtensions
     {
+
+        public static IEnumerable<XElement> SeleccionarElementos(this XDocument doc, string xpath)
+        {
+            return doc.XPathSelectElements(xpath);
+        }
+
+        public static string? ValorElemento(this XElement element, string xpath)
+        {
+            return element.XPathSelectElement(xpath)?.Value.Trim();
+        }
+
+        public static string? Buscar(this XNode doc, params string[] xpaths) =>
+           xpaths.Select(xpath => doc.XPathSelectElement(xpath)?.Value.Trim())
+                 .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+
         public static string? Buscar(this XDocument doc, params string[] xpaths) =>
             xpaths.Select(xpath => doc.XPathSelectElement(xpath)?.Value.Trim())
                   .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));

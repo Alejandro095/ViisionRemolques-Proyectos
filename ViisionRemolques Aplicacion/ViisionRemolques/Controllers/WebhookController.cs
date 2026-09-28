@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using ViisionRemolques.Entities;
 using ViisionRemolques.Enums;
 using ViisionRemolques.Parsing;
+using ViisionRemolques.Parsing.Extractors;
 using ViisionRemolques.Parsing.Models;
 using ViisionRemolques.Repositories;
 using ViisionRemolques.Services;
@@ -67,6 +68,19 @@ namespace ViisionRemolques.Controllers
                     evento.Evento.EventType == "duration"))
                 {
                     return Ok();
+                }
+
+                if (evento.Evento.VCAModo == VCAModoEnum.DeteccionTipoMultiObjetivo)
+                {
+                    foreach (var deteccion in evento.EventosDeteccionTipoMultiobjectivo)
+                    {
+                        if (deteccion.Tipo == EventoDeteccionTipoMultiobjetivoTiposEnum.Humano && deteccion.Humano.DeteccionFacial)
+                        {
+                            var DT1 = deteccion.Humano.DeteccionFacialId;
+
+                            var hola = "mundo!";
+                        }
+                    }
                 }
 
                 if (evento is null || evento.Evento.VCAModo == VCAModoEnum.Ninguno)

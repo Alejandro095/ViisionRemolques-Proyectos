@@ -8,9 +8,7 @@ namespace ViisionRemolques.Enums
         [Description("")]
         Ninguno,
         [Description("A")]
-        DeteccionTipoMultiObjeto,
-        [Description("B")]
-        ComparacionTipoMultiObjeto,
+        DeteccionTipoMultiObjetivo,
         [Description("C")]
         ArmadoPistaPersona,
         [Description("D")]
@@ -24,7 +22,9 @@ namespace ViisionRemolques.Enums
         [Description("H")]
         AlarmaRecuentoPersonas,
         [Description("I")]
-        RecuentoPersonas
+        RecuentoPersonas,
+        [Description("ANPR")]
+        ANPR
     }   
 
     public static class VCAModoEnumExtensions
