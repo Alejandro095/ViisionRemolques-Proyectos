@@ -48,7 +48,7 @@ namespace ViisionRemolques.Parsing.Extractors
     public static class EventoSmartEnum
     {
         public static readonly string Intruciones = "fielddetection";
-        public static readonly string SalidaRegion = "regionentrance";
+        public static readonly string SalidaRegion = "regionexiting";
         public static readonly string EntradaRegion = "regionentrance";
         public static readonly string CruceLinea = "linedetection";
         public static readonly string Merodeo = "loitering";
