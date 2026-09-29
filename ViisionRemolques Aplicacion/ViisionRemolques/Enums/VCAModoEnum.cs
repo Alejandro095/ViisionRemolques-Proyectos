@@ -7,22 +7,31 @@ namespace ViisionRemolques.Enums
     {
         [Description("")]
         Ninguno,
+        
         [Description("A")]
         DeteccionTipoMultiObjetivo,
+        
         [Description("C")]
         ArmadoPistaPersona,
-        [Description("D")]
-        EventoSmart,
+
         [Description("smart")]
+        EventoSmart,
+        
+        [Description("d")]
         TraficoRodado,
+        
         [Description("F")]
         Monitorizacion,
+        
         [Description("G")]
         CapturaFacial,
+        
         [Description("H")]
         AlarmaRecuentoPersonas,
+        
         [Description("I")]
         RecuentoPersonas,
+        
         [Description("ANPR")]
         ANPR
     }   

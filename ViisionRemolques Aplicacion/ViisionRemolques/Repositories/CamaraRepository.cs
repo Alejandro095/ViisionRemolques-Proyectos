@@ -1,14 +1,15 @@
-﻿using System.Data;
+﻿using Dapper;
+using System.Data;
+using System.Data.Common;
 using ViisionRemolques.Entities;
-using Dapper;
 
 namespace ViisionRemolques.Repositories
 {
     public class CamaraRepository
     {
-        private readonly IDbConnection _dbConnection;
+        private readonly DbConnection _dbConnection;
 
-        public CamaraRepository(IDbConnection dbConnection)
+        public CamaraRepository(DbConnection dbConnection)
         {
             _dbConnection = dbConnection;
         }

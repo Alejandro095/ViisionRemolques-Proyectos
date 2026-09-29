@@ -1,7 +1,9 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Data.Common;
 using ViisionRemolques.Repositories;
+using ViisionRemolques.Repositories.Eventos;
 using ViisionRemolques.Services;
 using ViisionRemolques.Services.ISAPI;
 
@@ -13,13 +15,13 @@ namespace ViisionRemolques
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
 
-            services.AddTransient<IDbConnection>(sp => new SqlConnection(configuration.GetConnectionString("DatabaseConnection")));
+            services.AddTransient<DbConnection>(sp => new SqlConnection(configuration.GetConnectionString("DatabaseConnection")));
 
             //Repositorios
             services.AddScoped<CamaraRepository>();
-            services.AddScoped<EventoPerimetralRepository>();
-            services.AddScoped<AlarmaDesconocidaLogRepository>();
-            services.AddScoped<EventoAlertaConteoPersonaRepository>();
+
+            services.AddScoped<ImagenesRepository>();
+            services.AddScoped<EventoSmartRepository>();
 
             return services;
         }

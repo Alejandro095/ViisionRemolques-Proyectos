@@ -204,221 +204,7 @@ BEGIN
 END;
 GO
 
---DETECCIONES---------------------------------------------------------------------------//
-CREATE TABLE Detecciones
-(
-    IdInterno    BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
-    Humano       BIT DEFAULT 0,
-    Vehiculo     BIT DEFAULT 0,
-    Datos        NVARCHAR(100),
-    Fecha        DATETIME2(2) NOT NULL DEFAULT GETDATE(),
-    Sincronizado BIT DEFAULT 0
-);
-GO
 
---BLACKLIST ROSTROS---------------------------------------------------------------------//
-CREATE TABLE BlacklistRostros
-(
-    IdInterno       BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
-    IdExterno       BIGINT NOT NULL,
-    Nombre          NVARCHAR(100),
-    Sexo            CHAR DEFAULT 'M',
-    Fotografia      NVARCHAR(100),
-    FechaCreacion   DATETIME2(2) NOT NULL DEFAULT GETDATE(),
-);
-GO
-
---BLACKLIST VEHICULOS-------------------------------------------------------------------//
-CREATE TABLE BlacklistVehiculos
-(
-    IdInterno       BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
-    IdExterno       BIGINT NOT NULL,
-    Placa           NVARCHAR(7),
-    NIV             NVARCHAR(17),
-    FechaCreacion   DATETIME2(2) NOT NULL DEFAULT GETDATE(),
-);
-GO
-
---ALERTAS PERIMETRALES------------------------------------------------------------------//
-CREATE TABLE EventosPerimetrales (
-    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
-    IdExterno                           BIGINT NULL,
-    IPCamara                            VARCHAR(45),
-    Evento                              VARCHAR(50) NOT NULL,
-    ZonaDeteccion                       VARCHAR(500),
-    RegionId                            VARCHAR(64),
-    TipoObjetivo                        VARCHAR(30) NULL,
-    FechaEvento                         DATETIME2(2) NOT NULL DEFAULT GETDATE(),
-    PathImagen                          NVARCHAR(500) NULL,
-    Prioridad                           INT NOT NULL DEFAULT 5,
-    Sincronizado                        BIT NOT NULL DEFAULT 0,
-    FechaRegistro                       DATETIME NOT NULL DEFAULT GETDATE()
-);
-GO
-
-CREATE INDEX IX_Eventos_PendientesSincronizar ON EventosPerimetrales (Sincronizado, FechaRegistro)
-WHERE Sincronizado = 0;
-GO
-
-CREATE PROCEDURE dbo.sp_EventosPerimetrales_Insertar
-    @IPCamara          VARCHAR(45),
-    @Evento            VARCHAR(50),
-    @RegionId          VARCHAR(64),
-    @ZonaDeteccion     VARCHAR(MAX) = NULL,
-    @TipoObjetivo      VARCHAR(30) = NULL,
-    @FechaEvento       DATETIME2(2) = NULL,
-    @Prioridad         INT = NULL,
-    @PathImagen        NVARCHAR(500) = NULL,
-    @IdExterno         BIGINT = NULL,
-    @Sincronizado      BIT = 0
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    INSERT INTO dbo.EventosPerimetrales (
-        IdExterno,
-        IPCamara,
-        Evento,
-        RegionId,
-        ZonaDeteccion,
-        TipoObjetivo,
-        FechaEvento,
-        PathImagen,
-        Prioridad,
-        Sincronizado,
-        FechaRegistro
-    )
-    VALUES (
-        @IdExterno,
-        @IPCamara,
-        @Evento,
-        @RegionId,
-        @ZonaDeteccion,
-        NULLIF(@TipoObjetivo, ''),
-        ISNULL(@FechaEvento, SYSDATETIME()),
-        @PathImagen,
-        @Prioridad,
-        @Sincronizado,
-        GETDATE()
-    );
-END
-GO
-
---ALERTAS CONTEOS PERSONAS--------------------------------------------------------------//
-CREATE TABLE EventoAlertaConteoPersonas (
-    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
-    IdExterno                           BIGINT NULL,
-    IPCamara                            VARCHAR(45),
-    Evento                              VARCHAR(50) NOT NULL,
-    Regiones                            VARCHAR(MAX),
-    TotalEntradas                       INT DEFAULT 0,
-    TotalSalidas                        INT DEFAULT 0,
-    TotalPasos                          INT DEFAULT 0,
-    TotalDuplicados                     INT DEFAULT 0,
-    FechaEvento                         DATETIME2(2) NOT NULL DEFAULT GETDATE(),
-    Prioridad                           INT NOT NULL DEFAULT 5,
-    Sincronizado                        BIT NOT NULL DEFAULT 0,
-    FechaRegistro                       DATETIME NOT NULL DEFAULT GETDATE()
-);
-GO
-
-CREATE INDEX IX_EventoAlertaConteoPersonas_PendientesSincronizar
-ON dbo.EventoAlertaConteoPersonas (Sincronizado, FechaRegistro)
-WHERE Sincronizado = 0;
-GO
-
-CREATE PROCEDURE dbo.sp_EventoAlertaConteoPersonas_Insertar
-    @IPCamara          VARCHAR(45),
-    @Evento            VARCHAR(50),
-    @Regiones          VARCHAR(MAX) = NULL,
-    @TotalEntradas     INT = 0,
-    @TotalSalidas      INT = 0,
-    @TotalPasos        INT = 0,
-    @TotalDuplicados   INT = 0,
-    @FechaEvento       DATETIME2(2) = NULL,
-    @Prioridad         INT = NULL,
-    @IdExterno         BIGINT = NULL,
-    @Sincronizado      BIT = 0
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    INSERT INTO dbo.EventoAlertaConteoPersonas (
-        IdExterno,
-        IPCamara,
-        Evento,
-        Regiones,
-        TotalEntradas,
-        TotalSalidas,
-        TotalPasos,
-        TotalDuplicados,
-        FechaEvento,
-        Prioridad,
-        Sincronizado,
-        FechaRegistro
-    )
-    VALUES (
-        @IdExterno,
-        @IPCamara,
-        @Evento,
-        NULLIF(@Regiones, ''),
-        ISNULL(@TotalEntradas, 0),
-        ISNULL(@TotalSalidas, 0),
-        ISNULL(@TotalPasos, 0),
-        ISNULL(@TotalDuplicados, 0),
-        ISNULL(@FechaEvento, SYSDATETIME()),
-        ISNULL(@Prioridad, 5),
-        @Sincronizado,
-        GETDATE()
-    );
-END
-GO
-
---TABLA POLIMÓRFICA DE IMÁGENES---------------------------------------------------------//
-CREATE TABLE Imagenes (
-    IdInterno           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
-    OrigenTabla         VARCHAR(50) NOT NULL,       -- 'Detecciones', 'BlacklistRostros', 'EventosPerimetrales', etc.
-    OrigenIdInterno     BIGINT NOT NULL,            -- IdInterno correspondiente en la tabla origen
-    PathImagen          NVARCHAR(500) NOT NULL,     -- Ruta local o URL de la imagen
-    Sincronizado        BIT NOT NULL DEFAULT 0,     -- Estado de sincronización remota/cloud
-    FechaCreacion       DATETIME2(2) NOT NULL DEFAULT GETDATE()
-);
-GO
-
-CREATE INDEX IX_Imagenes_OrigenTabla_OrigenIdInterno
-ON Imagenes (OrigenTabla, OrigenIdInterno);
-GO
-
-CREATE INDEX IX_Imagenes_PendientesSincronizar
-ON Imagenes (Sincronizado, FechaCreacion)
-WHERE Sincronizado = 0;
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_Imagenes_Insertar
-    @OrigenTabla        VARCHAR(50),
-    @OrigenIdInterno    BIGINT,
-    @PathImagen         NVARCHAR(500),
-    @Sincronizado       BIT = 0
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    INSERT INTO dbo.Imagenes (
-        OrigenTabla,
-        OrigenIdInterno,
-        PathImagen,
-        Sincronizado,
-        FechaCreacion
-    )
-    VALUES (
-        @OrigenTabla,
-        @OrigenIdInterno,
-        @PathImagen,
-        @Sincronizado,
-        SYSDATETIME()
-    );
-END;
-GO
 
 
 --ALERTAS DESCONOCIDAS LOG--------------------------------------------------------------//
@@ -466,4 +252,66 @@ BEGIN
         SYSDATETIME()
     );
 END;
+GO
+
+
+
+
+
+
+
+-----------------------------------------------------------------------------------
+---- EVENTOS
+-----------------------------------------------------------------------------------
+
+CREATE TABLE Eventos (
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    IdExterno                           BIGINT NULL,
+    CamaraIP                            NVARCHAR(45) NULL,
+    CamaraMAC                           NVARCHAR(17) NULL,
+    VCA                                 NVARCHAR(100) NULL,
+    Evento                              NVARCHAR(100) NULL,
+    Prioridad                           INT NOT NULL DEFAULT 5,
+
+    -- Auditoria
+    FechaEvento                         DATETIME NOT NULL DEFAULT GETDATE(),
+    Payload                             NVARCHAR(MAX) NULL
+);
+GO
+
+CREATE TABLE EventoDetallesSmart (
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    EventoIdInterno                 BIGINT NOT NULL,
+    RegionId                            NVARCHAR(100) NULL,
+    ObjetivoDetectadoTipo               NVARCHAR(100) NULL,
+    RegionCoordenadas                   NVARCHAR(MAX) NULL,
+
+    CONSTRAINT FK_EventoDetallesSmart_Eventos
+        FOREIGN KEY (EventoIdInterno)
+        REFERENCES Eventos(IdInterno)
+        ON DELETE CASCADE
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_EventoDetallesSmart_ReferenciaIdInterno
+ON EventoDetallesSmart (EventoIdInterno);
+GO
+
+--TABLA Imagenes ---------------------------------------------------------//
+CREATE TABLE Imagenes (
+    IdInterno           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    EventoIdInterno     BIGINT,
+    Path                NVARCHAR(MAX) NOT NULL,
+    Sincronizado        BIT NOT NULL DEFAULT 0,
+    FechaCreacion       DATETIME2(2) NOT NULL DEFAULT GETDATE(),
+
+    CONSTRAINT FK_Imagenes_Eventos
+        FOREIGN KEY (EventoIdInterno)
+        REFERENCES Eventos(IdInterno)
+        ON DELETE CASCADE
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Imagenes_EventoIdInterno
+ON Imagenes (EventoIdInterno);
 GO

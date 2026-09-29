@@ -9,6 +9,7 @@ using ViisionRemolques.Parsing;
 using ViisionRemolques.Parsing.Extractors;
 using ViisionRemolques.Parsing.Models;
 using ViisionRemolques.Repositories;
+using ViisionRemolques.Repositories.Eventos;
 using ViisionRemolques.Services;
 
 namespace ViisionRemolques.Controllers
@@ -17,20 +18,21 @@ namespace ViisionRemolques.Controllers
     [Route("webhook")]
     public class WebhookController : ControllerBase
     {
-        private readonly AlarmaDesconocidaLogRepository _alarmaDesconocidaLogRepository;
         private readonly ILogger<WebhookController> _logger;
         private readonly AlmacenamientoImagenesService _almacenamientoImagenesService;
         private readonly WebhookPayloadExtractorService _webhookPayloadExtractorService;
+        private readonly EventoSmartRepository _eventoSmartRepository;
 
         public WebhookController(
             ILogger<WebhookController> logger,
-            AlarmaDesconocidaLogRepository alarmasDesconocidasLogRepository,
             AlmacenamientoImagenesService almacenamientoImagenesService,
-            WebhookPayloadExtractorService webhookPayloadExtractorService)
+            WebhookPayloadExtractorService webhookPayloadExtractorService,
+            EventoSmartRepository eventoSmartRepository)
         {
             _logger = logger;
             _almacenamientoImagenesService = almacenamientoImagenesService;
             _webhookPayloadExtractorService = webhookPayloadExtractorService;
+            _eventoSmartRepository = eventoSmartRepository;
         }
 
         [HttpPost]
@@ -59,21 +61,13 @@ namespace ViisionRemolques.Controllers
 
                 if (evento is null || evento.Evento.VCAModo == VCAModoEnum.Ninguno)
                 {
-                    await _alarmaDesconocidaLogRepository.InsertarAsync(new AlarmaDesonocidaLogEntity()
-                    {
-                        IPCamara = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                        ContentType = Request.ContentType,
-                        Evento = evento?.Evento.EventType ?? null,
-                        Body = webhookPayload.Body,
-                        Motivo = evento is null ? "PARSEO_ERROR" : "EXTRACTOR_DETALLES_ERROR"
-                    });
-
                     return Ok();
                 }
 
                 switch (evento.Evento.VCAModo)
                 {
                     case VCAModoEnum.EventoSmart:
+                        await _eventoSmartRepository.InsertarAsync(evento, ImagenesPaths: imagenesPaths, Payload: webhookPayload.Body);
                         break;
                     case VCAModoEnum.RecuentoPersonas:
                         break;
