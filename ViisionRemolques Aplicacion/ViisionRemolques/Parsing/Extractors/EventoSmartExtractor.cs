@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using System.Xml.XPath;
 using ViisionRemolques.Enums;
 using ViisionRemolques.Parsing.Models;
 
@@ -29,20 +30,25 @@ namespace ViisionRemolques.Parsing.Extractors
 
         public void Extraer(XDocument doc, EventoExtractorModelo evento)
         {
-            evento.EventoSmart = new EventoSmartExtractorModelo
+            var nodos = doc.XPathSelectElements("//detectionregionentry");
+
+            foreach (var nodo in nodos)
             {
-                RegionCoordenadas = doc.BuscarInnerArrayJson("//detectionregionentry/regioncoordinateslist"),
-                RegionID = doc.Buscar("//detectionregionentry/regionid"),
-                ObjetivoDetectadoTipo = doc.Buscar("//detectiontarget", "//targettype")
-            };
+                evento.EventosSmart.Add(new EventoSmartExtractorModelo
+                {
+                    RegionId = nodo.Buscar("./regionid"),
+                    ObjetivoDetectadoTipo = nodo.Buscar("./detectiontarget", "./targettype"),
+                    RegionCoordenadas = nodo.BuscarXMLaJSONInnerArrayJSON("./regioncoordinateslist/regioncoordinates") ,                    
+                });
+            }
         }
     }
 
     public class EventoSmartExtractorModelo
     {
-        public string? RegionCoordenadas { get; set; }
-        public string? RegionID { get; set; }
+        public string? RegionId { get; set; }
         public string? ObjetivoDetectadoTipo { get; set; }
+        public string? RegionCoordenadas { get; set; }
     }
 
     public static class EventoSmartEnum

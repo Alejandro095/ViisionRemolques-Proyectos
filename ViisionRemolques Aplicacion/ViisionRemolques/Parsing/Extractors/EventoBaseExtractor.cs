@@ -18,6 +18,7 @@ namespace ViisionRemolques.Parsing.Extractors
                 IpAddress = doc.Buscar("//ipaddress"),
                 EventType = doc.Buscar("//eventtype"),
                 EventState = doc.Buscar("//eventstate"),
+                MACAddress = doc.Buscar("//macaddress"),
                 VCAModo = VCAModoEnum.Ninguno,
             };
         }
@@ -26,9 +27,10 @@ namespace ViisionRemolques.Parsing.Extractors
     public class EventoBaseExtractorModelo
     {
         public string? IpAddress { get; set; }
+        public string? MACAddress { get; set; }
         public string? EventType { get; set; }
         public string? EventState { get; set; }
-        public string? PId { get; set; }
         public VCAModoEnum? VCAModo { get; set; }
+        public DateTime Fecha = DateTime.Now;
     }
 }

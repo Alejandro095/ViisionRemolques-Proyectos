@@ -29,9 +29,9 @@ namespace ViisionRemolques.Parsing.Extractors
             int motocicletasDownwardFlow = 0;
             int motocicletasUpwardFlow = 0;
 
-            foreach (var nodoTarget in doc.SeleccionarElementos("//target"))
+            foreach (var nodoTarget in doc.XPathSelectElements("//target"))
             {
-                var recognitionType = nodoTarget.ValorElemento("./recognitiontype");
+                var recognitionType = nodoTarget.Buscar("./recognitiontype");
 
                 int sumaVolumTarget = 0;
                 int sumaDownwardTarget = 0;
@@ -40,17 +40,17 @@ namespace ViisionRemolques.Parsing.Extractors
                 // Iteramos los carriles dentro del TargetInfo de este Target
                 foreach (var nodoLane in nodoTarget.XPathSelectElements("./targetinfo/laneinfo"))
                 {
-                    if (int.TryParse(nodoLane.ValorElemento("./volum"), out int volum))
+                    if (int.TryParse(nodoLane.Buscar("./volum"), out int volum))
                     {
                         sumaVolumTarget += volum;
                     }
 
-                    if (int.TryParse(nodoLane.ValorElemento("./downwardflow"), out int downward))
+                    if (int.TryParse(nodoLane.Buscar("./downwardflow"), out int downward))
                     {
                         sumaDownwardTarget += downward;
                     }
 
-                    if (int.TryParse(nodoLane.ValorElemento("./upwardflow"), out int upward))
+                    if (int.TryParse(nodoLane.Buscar("./upwardflow"), out int upward))
                     {
                         sumaUpwardTarget += upward;
                     }

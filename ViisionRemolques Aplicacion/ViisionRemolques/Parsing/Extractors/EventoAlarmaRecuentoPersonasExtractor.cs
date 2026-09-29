@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using System.Xml.XPath;
 using ViisionRemolques.Enums;
 using ViisionRemolques.Parsing.Models;
 
@@ -18,21 +19,31 @@ namespace ViisionRemolques.Parsing.Extractors
 
         public void Extraer(XDocument doc, EventoExtractorModelo evento)
         {
-            evento.EventoAlarmaRecuentoPersonas = new EventoAlarmaRecuentoPersonasExtractorModelo
+
+            var nodos = doc.XPathSelectElements("//persondensityresult/target");
+
+            foreach (var nodo in nodos)
             {
-                ObjetivoDetectadoTipo = doc.Buscar("//persondensityresult//recognitiontype"),
-                Algoritmo = doc.Buscar("//targetinfo/datasource"),
-                RegionId = doc.Buscar("//targetinfo/regionid"),
-                RegionCoordenadas = doc.BuscarXMLaJSONInnerArrayJSON("//targetinfo//region"),
+                evento.EventosAlarmaRecuentoPersonas.Add(new EventoAlarmaRecuentoPersonasExtractorModelo
+                {
+                    ObjetivoDetectadoTipo = nodo.Buscar("./recognitiontype"),
 
-                ValorCausaEvento = doc.Buscar("//dsa/alarmtime", "//pqa/alarmcount"),
-                OperadorCausaEvento = doc.Buscar("//dsa/timetriggertype", "//pqa/counttriggertype"),
+                    Algoritmo = nodo.Buscar("./targetinfo/datasource"),
+                    RegionId = nodo.Buscar("./targetinfo/regionid"),
 
-                CantidadPersonas = doc.Buscar("//targetinfo/personcnt", "//targetinfo/framespeoplecounting_number"),
-                NivelDensidad = doc.Buscar("//targetinfo/densitylevel"),
-                NombreNivelDensidad = doc.Buscar("//targetinfo/customname"),
-                DireccionCambioDensidad = doc.Buscar("//targetinfo/densitylevelchangetype"),
-            };
+                    // DSA o PQA
+                    ValorCausaEvento = nodo.Buscar("./targetinfo/dsa/alarmtime", "./targetinfo/pqa/alarmcount"),
+                    OperadorCausaEvento = nodo.Buscar("./targetinfo/dsa/timetriggertype", "./targetinfo/pqa/counttriggertype"),
+
+                    RegionCoordenadas = nodo.BuscarXMLaJSONInnerArrayJSON("./targetinfo/dsa/region", "./targetinfo/pqa/region"),
+
+                    // Timing
+                    CantidadPersonas = nodo.Buscar("./targetinfo/personcnt", ".//targetinfo/framespeoplecounting_number"), // Trigger / PDC
+                    NivelDensidad = nodo.Buscar("./targetinfo/densitylevel"),
+                    NombreNivelDensidad = nodo.Buscar("./targetinfo/customname"),
+                    DireccionCambioDensidad = nodo.Buscar("./targetinfo/densitylevelchangetype")
+                });
+            }
         }
     }
 

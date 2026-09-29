@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using System.Xml.XPath;
 using ViisionRemolques.Enums;
 using ViisionRemolques.Parsing.Models;
 
@@ -18,26 +19,59 @@ namespace ViisionRemolques.Parsing.Extractors
 
         public void Extraer(XDocument doc, EventoExtractorModelo evento)
         {
-            evento.AlarmaConteoPersonas = new EventoRecuentoPersonasExtractorModelo
-            {                
-                TotalEntradas = doc.Buscar("//peoplecounting/enter"),
-                TotalSalidas = doc.Buscar("//peoplecounting/exit"),
-                TotalPasos = doc.Buscar("//peoplecounting/pass"),
-                TotalDuplicados = doc.Buscar("//peoplecounting/duplicatepeople"),
 
-                Regiones = doc.BuscarInnerArrayJson("//regionlist"),
-            };
+            // Totales generales (todas las regiones)
+            var todasEntradas = doc.Buscar("//peoplecounting/enter");
+            var todasSalidas = doc.Buscar("//peoplecounting/exit");
+            var todasTranseuntes = doc.Buscar("//peoplecounting/pass");
+            var todasDuplicados = doc.Buscar("//peoplecounting/duplicatepeople");
+
+            var nodosRegion = doc.XPathSelectElements("//regionlist/region").ToList();
+
+            if (nodosRegion.Any())
+            {
+                // Un registro por cada región específica encontrada
+                foreach (var nodoRegion in nodosRegion)
+                {
+                    evento.EventosRecuentoPersonas.Add(new EventoRecuentoPersonasExtractorModelo
+                    {
+                        TodasRegionesEntradas = todasEntradas,
+                        TodasRegionesSalidas = todasSalidas,
+                        TodasRegionesTranseuntes = todasTranseuntes,
+                        TodasRegionesDuplicados = todasDuplicados,
+
+                        RegionId = nodoRegion.Buscar("./id"),
+                        RegionEntradas = nodoRegion.Buscar("./enter"),
+                        RegionSalidas = nodoRegion.Buscar("./exit"),
+                        RegionTranseuntes = nodoRegion.Buscar("./pass"),
+                    });
+                }
+            }
+            else
+            {
+                // Fallback: Si no vienen regiones individuales, generamos un único registro con los datos globales
+                evento.EventosRecuentoPersonas.Add(new EventoRecuentoPersonasExtractorModelo
+                {
+                    TodasRegionesEntradas = todasEntradas,
+                    TodasRegionesSalidas = todasSalidas,
+                    TodasRegionesTranseuntes = todasTranseuntes,
+                    TodasRegionesDuplicados = todasDuplicados
+                });
+            }
         }
     }
 
     public class EventoRecuentoPersonasExtractorModelo
     {
-        public string? Regiones { get; set; }
-        public string? TotalEntradas { get; set; }
-        public string? TotalSalidas { get; set; }
-        public string? TotalPasos { get; set; }
-        public string? TotalDuplicados { get; set; }
+        public string? TodasRegionesEntradas { get; set; }
+        public string? TodasRegionesSalidas { get; set; }
+        public string? TodasRegionesTranseuntes { get; set; }
+        public string? TodasRegionesDuplicados { get; set; }
 
+        public string? RegionId { get; set; }
+        public string? RegionEntradas { get; set; }
+        public string? RegionSalidas { get; set; }
+        public string? RegionTranseuntes { get; set; }
     }
 
     public static class EventoRecuentoPersonasEnum

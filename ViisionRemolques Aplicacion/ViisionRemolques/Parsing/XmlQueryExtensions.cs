@@ -8,44 +8,58 @@ namespace ViisionRemolques.Parsing
 {
     public static class XmlQueryExtensions
     {
+        //public static IEnumerable<XElement> SeleccionarElementos(this XDocument doc, string xpath)
+        //{
+        //    return doc.XPathSelectElements(xpath);
+        //}
 
-        public static IEnumerable<XElement> SeleccionarElementos(this XDocument doc, string xpath)
+        //public static string? ValorElemento(this XElement element, string xpath)
+        //{
+        //    return element.XPathSelectElement(xpath)?.Value.Trim();
+        //}
+
+        public static string? Buscar(this XNode node, params string[] xpaths)
         {
-            return doc.XPathSelectElements(xpath);
-        }
-
-        public static string? ValorElemento(this XElement element, string xpath)
-        {
-            return element.XPathSelectElement(xpath)?.Value.Trim();
-        }
-
-        public static string? Buscar(this XNode doc, params string[] xpaths) =>
-           xpaths.Select(xpath => doc.XPathSelectElement(xpath)?.Value.Trim())
-                 .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
-
-
-        public static string? Buscar(this XDocument doc, params string[] xpaths) =>
-            xpaths.Select(xpath => doc.XPathSelectElement(xpath)?.Value.Trim())
-                  .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
-
-        public static string? BuscarInnerXml(this XDocument doc, params string[] xpaths) =>
-            xpaths.Select(xpath => doc.XPathSelectElement(xpath)?.ToString().Trim())
-                  .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
-
-        public static string? BuscarInnerJson(this XDocument doc, params string[] xpaths)
-        {
-            try
+            foreach (var xpath in xpaths)
             {
-                var xmlString = doc.BuscarInnerXml(xpaths);
-                if (string.IsNullOrWhiteSpace(xmlString)) return null;
+                var valor = node.XPathSelectElements(xpath)
+                                .Select(el => el.Value.Trim())
+                                .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
-                var node = XElement.Parse(xmlString);
-                return JsonConvert.SerializeXNode(node, Formatting.None, omitRootObject: true);
-            } catch
-            {
-                return null;
+                if (valor != null)
+                    return valor;
             }
+
+            return null;
         }
+
+        //public static string? Buscar(this XNode doc, params string[] xpaths) =>
+        //   xpaths.Select(xpath => doc.XPathSelectElement(xpath)?.Value.Trim())
+        //         .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+
+        //public static string? Buscar(this XDocument doc, params string[] xpaths) =>
+        //    xpaths.Select(xpath => doc.XPathSelectElement(xpath)?.Value.Trim())
+        //          .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+        //public static string? BuscarInnerXml(this XDocument doc, params string[] xpaths) =>
+        //    xpaths.Select(xpath => doc.XPathSelectElement(xpath)?.ToString().Trim())
+        //          .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+        //public static string? BuscarInnerJson(this XDocument doc, params string[] xpaths)
+        //{
+        //    try
+        //    {
+        //        var xmlString = doc.BuscarInnerXml(xpaths);
+        //        if (string.IsNullOrWhiteSpace(xmlString)) return null;
+
+        //        var node = XElement.Parse(xmlString);
+        //        return JsonConvert.SerializeXNode(node, Formatting.None, omitRootObject: true);
+        //    } catch
+        //    {
+        //        return null;
+        //    }
+        //}
 
 
         public static string? BuscarInnerArrayJson(this XDocument doc, params string[] xpaths)
@@ -93,14 +107,14 @@ namespace ViisionRemolques.Parsing
         }
 
 
-        public static string? BuscarXMLaJSONInnerArrayJSON(this XDocument doc, params string[] xpaths)
+        public static string? BuscarXMLaJSONInnerArrayJSON(this XNode nodo, params string[] xpaths)
         {
             try
             {
                 // Usa XPathSelectElements (en plural) para traer TODOS los nodos coincidentes
                 foreach (var xpath in xpaths)
                 {
-                    var elements = doc.XPathSelectElements(xpath).ToList();
+                    var elements = nodo.XPathSelectElements(xpath).ToList();
 
                     if (elements.Count == 0) continue;
 

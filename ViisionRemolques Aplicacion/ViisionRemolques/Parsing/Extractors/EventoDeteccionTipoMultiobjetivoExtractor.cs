@@ -20,7 +20,7 @@ namespace ViisionRemolques.Parsing.Extractors
 
         public void Extraer(XDocument doc, EventoExtractorModelo evento)
         {
-            foreach (var nodeCapture in doc.SeleccionarElementos("//captureresult"))
+            foreach (var nodeCapture in doc.XPathSelectElements("//captureresult"))
             {
                 var elementoCaptura = new EventoDeteccionTipoMultiobjectivoExtractorModelo();
 
