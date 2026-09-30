@@ -82,6 +82,8 @@ builder.Services.AddReverseProxy()
 
 builder.Services.AddApplicationServices();
 
+builder.Services.AddApplicationJobs();
+
 var app = builder.Build();
 
 app.UseExceptionHandler();

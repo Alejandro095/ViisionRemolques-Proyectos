@@ -5,35 +5,38 @@ namespace ViisionRemolques.Enums
 {
     public enum VCAModoEnum
     {
-        [Description("")]
-        Ninguno,
-        
-        [Description("A")]
-        DeteccionTipoMultiObjetivo,
-        
-        [Description("C")]
+        [Description("TEMP-AlarmaRecuentoPersonas")]
+        AlarmaRecuentoPersonas,
+
+        [Description("ANPR")]
+        ANPR,
+
+        [Description("personArming")]
         ArmadoPistaPersona,
+
+        [Description("TEMP-CapturaFacial")]
+        CapturaFacial,
+
+        [Description("mixedTargetDetection")]
+        DeteccionTipoMultiObjetivo,
+
+        [Description("faceHumanModelingContrast")]
+        DeteccionTipoMultiObjetivoComparacion,
 
         [Description("smart")]
         EventoSmart,
-        
-        [Description("d")]
-        TraficoRodado,
-        
-        [Description("F")]
+
+        [Description("close")]
         Monitorizacion,
-        
-        [Description("G")]
-        CapturaFacial,
-        
-        [Description("H")]
-        AlarmaRecuentoPersonas,
-        
-        [Description("I")]
+
+        [Description("")]
+        Ninguno,
+
+        [Description("TEMP-RecuentoPersonas")]
         RecuentoPersonas,
-        
-        [Description("ANPR")]
-        ANPR
+
+        [Description("roadDetection")]
+        TraficoRodado        
     }   
 
     public static class VCAModoEnumExtensions

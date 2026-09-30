@@ -1,10 +1,14 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
+﻿using Hangfire;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Net.Http.Headers;
+using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Headers;
 using ViisionRemolques.Entities;
 using ViisionRemolques.Enums;
+using ViisionRemolques.Jobs;
 using ViisionRemolques.Parsing;
 using ViisionRemolques.Parsing.Extractors;
 using ViisionRemolques.Parsing.Models;
@@ -37,49 +41,37 @@ namespace ViisionRemolques.Controllers
 
         [HttpPost]
         [DisableRequestSizeLimit]
-        public async Task<IActionResult> Post()
+        public async Task<IActionResult> Post([FromServices] IBackgroundJobClient Jobs, CancellationToken cancellationToken)
         {
             try
             {
                 var webhookPayload = await _webhookPayloadExtractorService.Extraer(Request);
 
-                if (webhookPayload.Body is null)
-                {
-                    return BadRequest();
-                }
+                if (webhookPayload.Body is null) return BadRequest();
 
                 EventoExtractorModelo? evento = CameraEventParser.Parse(webhookPayload.Body);
 
-                var imagenesPaths = await _almacenamientoImagenesService.Guardar(webhookPayload.Imagenes);
-
                 if (evento is not null && (
-                    evento.Evento.EventType == "heartBeat" || 
+                    evento.Evento.EventType == "heartBeat" ||
                     evento.Evento.EventType == "duration"))
                 {
                     return Ok();
                 }
 
-                if (evento is null || evento.Evento.VCAModo == VCAModoEnum.Ninguno)
-                {
-                    return Ok();
-                }
+                if (evento is not null && evento.Evento.VCAModo == VCAModoEnum.Ninguno) return Ok();
 
-                switch (evento.Evento.VCAModo)
-                {
-                    case VCAModoEnum.EventoSmart:
-                        await _eventoSmartRepository.InsertarAsync(evento, ImagenesPaths: imagenesPaths, Payload: webhookPayload.Body);
-                        break;
-                    case VCAModoEnum.RecuentoPersonas:
-                        break;
-                    case VCAModoEnum.CapturaFacial:
-                        break;
-                }
+                var imagenesPaths = await _almacenamientoImagenesService.Guardar(webhookPayload.Imagenes);
+
+                // Encola el trabajo y libera inmediatamente la petición del webhook
+                Jobs.Enqueue<ProcesadorEventosWebhookJob>(
+                    job => job.ProcesarEventoAsync(evento, imagenesPaths, webhookPayload.Body, cancellationToken)
+                );
 
                 return Ok();
-            } catch (Exception exception)
+            }
+            catch (Exception exception)
             {
                 _logger.LogCritical(exception.ToString());
-
                 return Ok();
             }
         }

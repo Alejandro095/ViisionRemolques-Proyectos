@@ -56,7 +56,6 @@ namespace ViisionRemolques.Repositories.Eventos
 
                 }), transaction: transaction);
 
-
                 // Insertar imagenes
                 await _imagenesRepository.InsertarAsync(EventoIdInterno, ImagenesPaths, transaction);
 

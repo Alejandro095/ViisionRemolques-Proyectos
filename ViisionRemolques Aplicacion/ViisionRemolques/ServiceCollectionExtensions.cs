@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Data.Common;
+using ViisionRemolques.Jobs;
 using ViisionRemolques.Repositories;
 using ViisionRemolques.Repositories.Eventos;
 using ViisionRemolques.Services;
@@ -32,6 +33,14 @@ namespace ViisionRemolques
             services.AddTransient<VCAService>();
             services.AddTransient<AlmacenamientoImagenesService>();
             services.AddTransient<WebhookPayloadExtractorService>();
+
+            return services;
+        }
+
+
+        public static IServiceCollection AddApplicationJobs(this IServiceCollection services)
+        {
+            services.AddTransient<ProcesadorEventosWebhookJob>();
 
             return services;
         }
