@@ -281,8 +281,8 @@ GO
 
 CREATE TABLE EventoDetallesSmart (
     IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
-    EventoIdInterno                 BIGINT NOT NULL,
-    RegionId                            NVARCHAR(100) NULL,
+    EventoIdInterno                     BIGINT NOT NULL,
+    RegionId                            INT NULL,
     ObjetivoDetectadoTipo               NVARCHAR(100) NULL,
     RegionCoordenadas                   NVARCHAR(MAX) NULL,
 
@@ -295,6 +295,33 @@ GO
 
 CREATE NONCLUSTERED INDEX IX_EventoDetallesSmart_ReferenciaIdInterno
 ON EventoDetallesSmart (EventoIdInterno);
+GO
+
+
+CREATE TABLE EventoDetallesAlarmaRecuentoPersonas (
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    EventoIdInterno                     BIGINT NOT NULL,
+
+    ObjetivoDetectadoTipo               NVARCHAR(100) NULL,
+    Algoritmo                           NVARCHAR(100) NULL,
+    RegionId                            INT NULL,
+    RegionCoordenadas                   NVARCHAR(MAX) NULL,
+    ValorCausaEvento                    INT NULL,
+    OperadorCausaEvento                 NVARCHAR(100) NULL,
+    CantidadPersonas                    INT NULL,
+    NivelDensidad                       INT NULL,
+    NombreNivelDensidad                 NVARCHAR(100) NULL,
+    DireccionCambioDensidad             NVARCHAR(100) NULL
+
+    CONSTRAINT FK_EventoDetallesAlarmaRecuentoPersonas_Eventos
+        FOREIGN KEY (EventoIdInterno)
+        REFERENCES Eventos(IdInterno)
+        ON DELETE CASCADE
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_EventoDetallesSmart_ReferenciaIdInterno
+ON EventoDetallesAlarmaRecuentoPersonas (EventoIdInterno);
 GO
 
 --TABLA Imagenes ---------------------------------------------------------//

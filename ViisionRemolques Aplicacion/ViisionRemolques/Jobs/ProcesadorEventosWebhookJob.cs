@@ -10,16 +10,21 @@ namespace ViisionRemolques.Jobs
     {
         private readonly ILogger<ProcesadorEventosWebhookJob> _logger;
         private readonly AlmacenamientoImagenesService _almacenamientoImagenesService;
+
+
         private readonly EventoSmartRepository _eventoSmartRepository;
+        private readonly EventoAlarmaRecuentoPersonasRepository _eventoAlarmaRecuentoPersonasRepository;
 
         public ProcesadorEventosWebhookJob(
             ILogger<ProcesadorEventosWebhookJob> logger,
             AlmacenamientoImagenesService almacenamientoImagenesService,
-            EventoSmartRepository eventoSmartRepository)
+            EventoSmartRepository eventoSmartRepository,
+            EventoAlarmaRecuentoPersonasRepository eventoAlarmaRecuentoPersonasRepository)
         {
             _logger = logger;
             _almacenamientoImagenesService = almacenamientoImagenesService;
             _eventoSmartRepository = eventoSmartRepository;
+            _eventoAlarmaRecuentoPersonasRepository = eventoAlarmaRecuentoPersonasRepository;
         }
 
         public async Task ProcesarEventoAsync(
@@ -36,7 +41,7 @@ namespace ViisionRemolques.Jobs
                 switch (eventoExtractorModelo.Evento.VCAModo)
                 {
                     case VCAModoEnum.AlarmaRecuentoPersonas:
-                        // TODO: Implementar cuando esté disponible
+                        await _eventoAlarmaRecuentoPersonasRepository.InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.ANPR:
                         // TODO: Implementar cuando esté disponible
