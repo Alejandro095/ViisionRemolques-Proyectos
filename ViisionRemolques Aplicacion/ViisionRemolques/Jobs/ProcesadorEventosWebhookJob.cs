@@ -16,6 +16,7 @@ namespace ViisionRemolques.Jobs
         private readonly EventoAlarmaRecuentoPersonasRepository _eventoAlarmaRecuentoPersonasRepository;
         private readonly EventoANPRRepository _eventoANPRRepository;
         private readonly EventoArmadoPistaPersonaRepository _eventoArmadoPersonaRepository;
+        private readonly EventoCapturaFacialRepository _eventoCapturaFacialRepository;
 
         public ProcesadorEventosWebhookJob(
             ILogger<ProcesadorEventosWebhookJob> logger,
@@ -23,7 +24,8 @@ namespace ViisionRemolques.Jobs
             EventoSmartRepository eventoSmartRepository,
             EventoAlarmaRecuentoPersonasRepository eventoAlarmaRecuentoPersonasRepository,
             EventoANPRRepository eventoANPRRepository,
-            EventoArmadoPistaPersonaRepository eventoArmadoPersonaRepository)
+            EventoArmadoPistaPersonaRepository eventoArmadoPersonaRepository,
+            EventoCapturaFacialRepository eventoCapturaFacialRepository)
         {
             _logger = logger;
             _almacenamientoImagenesService = almacenamientoImagenesService;
@@ -31,6 +33,7 @@ namespace ViisionRemolques.Jobs
             _eventoAlarmaRecuentoPersonasRepository = eventoAlarmaRecuentoPersonasRepository;
             _eventoANPRRepository = eventoANPRRepository;
             _eventoArmadoPersonaRepository = eventoArmadoPersonaRepository;
+            _eventoCapturaFacialRepository = eventoCapturaFacialRepository;
         }
 
         public async Task ProcesarEventoAsync(
@@ -59,7 +62,8 @@ namespace ViisionRemolques.Jobs
                             .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.CapturaFacial:
-                        // TODO: Implementar cuando esté disponible
+                        await _eventoCapturaFacialRepository
+                            .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.DeteccionTipoMultiObjetivo:
                         // TODO: Implementar cuando esté disponible

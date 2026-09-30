@@ -26,6 +26,7 @@ namespace ViisionRemolques
             services.AddScoped<EventoAlarmaRecuentoPersonasRepository>();
             services.AddScoped<EventoANPRRepository>();
             services.AddScoped<EventoArmadoPistaPersonaRepository>();
+            services.AddScoped<EventoCapturaFacialRepository>();
 
             return services;
         }

@@ -376,6 +376,24 @@ CREATE NONCLUSTERED INDEX IX_EventoDetallesArmadoPistaPersona_EventoIdInterno
 ON EventoDetallesArmadoPistaPersona (EventoIdInterno);
 GO
 
+CREATE TABLE EventoDetallesCapturaFacial(
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    EventoIdInterno                     BIGINT NOT NULL,
+
+    RegionCoordenadas                  NVARCHAR(MAX) NULL,
+
+    CONSTRAINT FK_EventoDetallesCapturaFacial_Eventos
+        FOREIGN KEY (EventoIdInterno)
+        REFERENCES Eventos(IdInterno)
+        ON DELETE CASCADE
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_EventoDetallesCapturaFacial_EventoIdInterno
+ON EventoDetallesCapturaFacial(EventoIdInterno);
+GO
+
+
 
 
 --TABLA Imagenes ---------------------------------------------------------//

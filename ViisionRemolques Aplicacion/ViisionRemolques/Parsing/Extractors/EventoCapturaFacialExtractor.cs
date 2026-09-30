@@ -20,14 +20,14 @@ namespace ViisionRemolques.Parsing.Extractors
         {
             evento.EventoCapturaFacial = new EventoCapturaFacialExtractorModelo
             {
-                CoordenadasRostros = doc.BuscarXMLaJSONInnerArrayJSON("//facecapture//faces/facerect"),
+                RegionCoordenadas = doc.BuscarXMLaJSONInnerArrayJSON("//facecapture//faces/facerect"),
             };
         }
     }
 
     public class EventoCapturaFacialExtractorModelo
     {
-        public string? CoordenadasRostros { get; set; }
+        public string? RegionCoordenadas { get; set; }
     }
 
     public static class EventoCapturaFacialEnum
