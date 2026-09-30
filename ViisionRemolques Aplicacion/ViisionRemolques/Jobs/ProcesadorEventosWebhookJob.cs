@@ -15,16 +15,20 @@ namespace ViisionRemolques.Jobs
         private readonly EventoSmartRepository _eventoSmartRepository;
         private readonly EventoAlarmaRecuentoPersonasRepository _eventoAlarmaRecuentoPersonasRepository;
 
+        private readonly EventoANPRRepository _eventoANPRRepository;
+
         public ProcesadorEventosWebhookJob(
             ILogger<ProcesadorEventosWebhookJob> logger,
             AlmacenamientoImagenesService almacenamientoImagenesService,
             EventoSmartRepository eventoSmartRepository,
-            EventoAlarmaRecuentoPersonasRepository eventoAlarmaRecuentoPersonasRepository)
+            EventoAlarmaRecuentoPersonasRepository eventoAlarmaRecuentoPersonasRepository,
+            EventoANPRRepository eventoANPRRepository)
         {
             _logger = logger;
             _almacenamientoImagenesService = almacenamientoImagenesService;
             _eventoSmartRepository = eventoSmartRepository;
             _eventoAlarmaRecuentoPersonasRepository = eventoAlarmaRecuentoPersonasRepository;
+            _eventoANPRRepository = eventoANPRRepository;
         }
 
         public async Task ProcesarEventoAsync(
@@ -41,10 +45,12 @@ namespace ViisionRemolques.Jobs
                 switch (eventoExtractorModelo.Evento.VCAModo)
                 {
                     case VCAModoEnum.AlarmaRecuentoPersonas:
-                        await _eventoAlarmaRecuentoPersonasRepository.InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
+                        await _eventoAlarmaRecuentoPersonasRepository
+                            .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.ANPR:
-                        // TODO: Implementar cuando esté disponible
+                        await _eventoANPRRepository
+                            .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.ArmadoPistaPersona:
                         // TODO: Implementar cuando esté disponible
@@ -56,7 +62,8 @@ namespace ViisionRemolques.Jobs
                         // TODO: Implementar cuando esté disponible
                         break;
                     case VCAModoEnum.EventoSmart:
-                        await _eventoSmartRepository.InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
+                        await _eventoSmartRepository
+                            .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.RecuentoPersonas:
                         // TODO: Implementar cuando esté disponible

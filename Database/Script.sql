@@ -293,7 +293,7 @@ CREATE TABLE EventoDetallesSmart (
 );
 GO
 
-CREATE NONCLUSTERED INDEX IX_EventoDetallesSmart_ReferenciaIdInterno
+CREATE NONCLUSTERED INDEX IX_EventoDetallesSmart_EventoIdInterno
 ON EventoDetallesSmart (EventoIdInterno);
 GO
 
@@ -320,9 +320,38 @@ CREATE TABLE EventoDetallesAlarmaRecuentoPersonas (
 );
 GO
 
-CREATE NONCLUSTERED INDEX IX_EventoDetallesSmart_ReferenciaIdInterno
+CREATE NONCLUSTERED INDEX IX_EventoDetallesSmart_EventoIdInterno
 ON EventoDetallesAlarmaRecuentoPersonas (EventoIdInterno);
 GO
+
+
+CREATE TABLE EventoDetallesANPR (
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    EventoIdInterno                     BIGINT NOT NULL,
+
+    Matricula                           NVARCHAR(100) NULL,
+    VehiculoDosRuedas                   NVARCHAR(100) NULL,
+    VehiculoTresRuedas                  NVARCHAR(100) NULL,
+    VehiculoTipo                        NVARCHAR(100) NULL,
+    VehiculoColor                       NVARCHAR(100) NULL,
+    Direccion                           NVARCHAR(100) NULL,
+    NumeroCarril                        INT NULL,
+    NombreLista                         NVARCHAR(100) NULL,
+    Radar                               BIT DEFAULT 0 NOT NULL,
+    Velocidad                           INT NULL,
+
+    CONSTRAINT FK_EventoDetallesANPR_Eventos
+        FOREIGN KEY (EventoIdInterno)
+        REFERENCES Eventos(IdInterno)
+        ON DELETE CASCADE
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_EventoDetallesANPR_EventoIdInterno
+ON EventoDetallesANPR (EventoIdInterno);
+GO
+
+
 
 --TABLA Imagenes ---------------------------------------------------------//
 CREATE TABLE Imagenes (
