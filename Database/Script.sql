@@ -351,6 +351,31 @@ CREATE NONCLUSTERED INDEX IX_EventoDetallesANPR_EventoIdInterno
 ON EventoDetallesANPR (EventoIdInterno);
 GO
 
+CREATE TABLE EventoDetallesArmadoPistaPersona (
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    EventoIdInterno                     BIGINT NOT NULL,
+
+    Edad                                INT NULL,
+    GrupoEdad                           NVARCHAR(100) NULL,
+    Genero                              NVARCHAR(100) NULL,
+    Lentes                              NVARCHAR(100) NULL,
+    Mascara                             NVARCHAR(100) NULL,
+    ExpresionFacial                     NVARCHAR(100) NULL,
+    Sombrero                            NVARCHAR(100) NULL,
+    DeteccionFacial                     BIT DEFAULT 0 NOT NULL,
+    DeteccionFacialId                   NVARCHAR(MAX) NULL,
+
+    CONSTRAINT FK_EventoDetallesArmadoPistaPersona_Eventos
+        FOREIGN KEY (EventoIdInterno)
+        REFERENCES Eventos(IdInterno)
+        ON DELETE CASCADE
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_EventoDetallesArmadoPistaPersona_EventoIdInterno
+ON EventoDetallesArmadoPistaPersona (EventoIdInterno);
+GO
+
 
 
 --TABLA Imagenes ---------------------------------------------------------//

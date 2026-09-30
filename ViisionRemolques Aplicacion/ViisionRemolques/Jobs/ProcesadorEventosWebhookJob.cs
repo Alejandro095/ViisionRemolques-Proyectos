@@ -14,21 +14,23 @@ namespace ViisionRemolques.Jobs
 
         private readonly EventoSmartRepository _eventoSmartRepository;
         private readonly EventoAlarmaRecuentoPersonasRepository _eventoAlarmaRecuentoPersonasRepository;
-
         private readonly EventoANPRRepository _eventoANPRRepository;
+        private readonly EventoArmadoPistaPersonaRepository _eventoArmadoPersonaRepository;
 
         public ProcesadorEventosWebhookJob(
             ILogger<ProcesadorEventosWebhookJob> logger,
             AlmacenamientoImagenesService almacenamientoImagenesService,
             EventoSmartRepository eventoSmartRepository,
             EventoAlarmaRecuentoPersonasRepository eventoAlarmaRecuentoPersonasRepository,
-            EventoANPRRepository eventoANPRRepository)
+            EventoANPRRepository eventoANPRRepository,
+            EventoArmadoPistaPersonaRepository eventoArmadoPersonaRepository)
         {
             _logger = logger;
             _almacenamientoImagenesService = almacenamientoImagenesService;
             _eventoSmartRepository = eventoSmartRepository;
             _eventoAlarmaRecuentoPersonasRepository = eventoAlarmaRecuentoPersonasRepository;
             _eventoANPRRepository = eventoANPRRepository;
+            _eventoArmadoPersonaRepository = eventoArmadoPersonaRepository;
         }
 
         public async Task ProcesarEventoAsync(
@@ -53,7 +55,8 @@ namespace ViisionRemolques.Jobs
                             .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.ArmadoPistaPersona:
-                        // TODO: Implementar cuando esté disponible
+                        await _eventoArmadoPersonaRepository
+                            .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.CapturaFacial:
                         // TODO: Implementar cuando esté disponible
