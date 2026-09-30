@@ -320,7 +320,7 @@ CREATE TABLE EventoDetallesAlarmaRecuentoPersonas (
 );
 GO
 
-CREATE NONCLUSTERED INDEX IX_EventoDetallesSmart_EventoIdInterno
+CREATE NONCLUSTERED INDEX IX_EventoDetallesAlarmaRecuentoPersonas_EventoIdInterno
 ON EventoDetallesAlarmaRecuentoPersonas (EventoIdInterno);
 GO
 
@@ -434,6 +434,30 @@ CREATE NONCLUSTERED INDEX IX_EventoDetallesDeteccionTipoMultiobjetivo_EventoIdIn
 EventoDetallesDeteccionTipoMultiobjetivo(EventoIdInterno);
 GO
 
+CREATE TABLE EventoDetallesRecuentoPersonas(
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    EventoIdInterno                     BIGINT NOT NULL,
+
+    TodasRegionesEntradas               INT NULL,
+    TodasRegionesSalidas                INT NULL,
+    TodasRegionesTranseuntes            INT NULL,
+    TodasRegionesDuplicados             INT NULL,
+
+    RegionId                            INT NULL,
+    RegionEntradas                      INT NULL,
+    RegionSalidas                       INT NULL,
+    RegionTranseuntes                   INT NULL,
+
+    CONSTRAINT FK_EventoDetallesRecuentoPersonas_Eventos
+        FOREIGN KEY (EventoIdInterno)
+        REFERENCES Eventos(IdInterno)
+        ON DELETE CASCADE
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_EventoDetallesRecuentoPersonasl_EventoIdInterno
+ON EventoDetallesRecuentoPersonas(EventoIdInterno);
+GO
 
 
 

@@ -18,6 +18,8 @@ namespace ViisionRemolques.Jobs
         private readonly EventoArmadoPistaPersonaRepository _eventoArmadoPersonaRepository;
         private readonly EventoCapturaFacialRepository _eventoCapturaFacialRepository;
         private readonly EventoDeteccionTipoMultiobjetivoRepository _eventoDeteccionTipoMultiobjetivoepository;
+        private readonly EventoRecuentoPersonasRepository _eventoRecuentoPersonasRepository;
+
         public ProcesadorEventosWebhookJob(
             ILogger<ProcesadorEventosWebhookJob> logger,
             AlmacenamientoImagenesService almacenamientoImagenesService,
@@ -26,7 +28,8 @@ namespace ViisionRemolques.Jobs
             EventoANPRRepository eventoANPRRepository,
             EventoArmadoPistaPersonaRepository eventoArmadoPersonaRepository,
             EventoCapturaFacialRepository eventoCapturaFacialRepository,
-            EventoDeteccionTipoMultiobjetivoRepository eventoDeteccionTipoMultiobjetivoepository)
+            EventoDeteccionTipoMultiobjetivoRepository eventoDeteccionTipoMultiobjetivoepository,
+            EventoRecuentoPersonasRepository eventoRecuentoPersonasRepository)
         {
             _logger = logger;
             _almacenamientoImagenesService = almacenamientoImagenesService;
@@ -36,6 +39,7 @@ namespace ViisionRemolques.Jobs
             _eventoArmadoPersonaRepository = eventoArmadoPersonaRepository;
             _eventoCapturaFacialRepository = eventoCapturaFacialRepository;
             _eventoDeteccionTipoMultiobjetivoepository = eventoDeteccionTipoMultiobjetivoepository;
+            _eventoRecuentoPersonasRepository = eventoRecuentoPersonasRepository;
         }
 
         public async Task ProcesarEventoAsync(
@@ -76,7 +80,8 @@ namespace ViisionRemolques.Jobs
                             .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.RecuentoPersonas:
-                        // TODO: Implementar cuando esté disponible
+                        await _eventoRecuentoPersonasRepository
+                            .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.TraficoRodado:
                         // TODO: Implementar cuando esté disponible
