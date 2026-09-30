@@ -17,7 +17,7 @@ namespace ViisionRemolques.Jobs
         private readonly EventoANPRRepository _eventoANPRRepository;
         private readonly EventoArmadoPistaPersonaRepository _eventoArmadoPersonaRepository;
         private readonly EventoCapturaFacialRepository _eventoCapturaFacialRepository;
-
+        private readonly EventoDeteccionTipoMultiobjetivoRepository _eventoDeteccionTipoMultiobjetivoepository;
         public ProcesadorEventosWebhookJob(
             ILogger<ProcesadorEventosWebhookJob> logger,
             AlmacenamientoImagenesService almacenamientoImagenesService,
@@ -25,7 +25,8 @@ namespace ViisionRemolques.Jobs
             EventoAlarmaRecuentoPersonasRepository eventoAlarmaRecuentoPersonasRepository,
             EventoANPRRepository eventoANPRRepository,
             EventoArmadoPistaPersonaRepository eventoArmadoPersonaRepository,
-            EventoCapturaFacialRepository eventoCapturaFacialRepository)
+            EventoCapturaFacialRepository eventoCapturaFacialRepository,
+            EventoDeteccionTipoMultiobjetivoRepository eventoDeteccionTipoMultiobjetivoepository)
         {
             _logger = logger;
             _almacenamientoImagenesService = almacenamientoImagenesService;
@@ -34,6 +35,7 @@ namespace ViisionRemolques.Jobs
             _eventoANPRRepository = eventoANPRRepository;
             _eventoArmadoPersonaRepository = eventoArmadoPersonaRepository;
             _eventoCapturaFacialRepository = eventoCapturaFacialRepository;
+            _eventoDeteccionTipoMultiobjetivoepository = eventoDeteccionTipoMultiobjetivoepository;
         }
 
         public async Task ProcesarEventoAsync(
@@ -66,7 +68,8 @@ namespace ViisionRemolques.Jobs
                             .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.DeteccionTipoMultiObjetivo:
-                        // TODO: Implementar cuando esté disponible
+                        await _eventoDeteccionTipoMultiobjetivoepository
+                            .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.EventoSmart:
                         await _eventoSmartRepository

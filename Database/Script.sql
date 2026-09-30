@@ -393,6 +393,47 @@ CREATE NONCLUSTERED INDEX IX_EventoDetallesCapturaFacial_EventoIdInterno
 ON EventoDetallesCapturaFacial(EventoIdInterno);
 GO
 
+CREATE TABLE EventoDetallesDeteccionTipoMultiobjetivo(
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    EventoIdInterno                     BIGINT NOT NULL,
+
+    Tipo                                NVARCHAR(100) NULL,
+    Puntuacion                          DECIMAL(10, 2) NULL,
+    -- Tipo:Humano
+    HumanoEdad                          INT NULL,
+    HumanoExpresionFacial               NVARCHAR(100) NULL,
+    HumanoColorChaqueta                 NVARCHAR(100) NULL,
+    HumanoLentes                        NVARCHAR(100) NULL,
+    HumanoGenero                        NVARCHAR(100) NULL,
+    HumanoBolso                         NVARCHAR(100) NULL,
+    HumanoSombrero                      NVARCHAR(100) NULL,
+    HumanoTipoChaqueta                  NVARCHAR(100) NULL,
+    HumanoMascarilla                    NVARCHAR(100) NULL,
+    HumanoEstiloCabello                 NVARCHAR(100) NULL,
+    HumanoGrupoEdad                     NVARCHAR(100) NULL,
+    HumanoObjetos                       NVARCHAR(100) NULL,
+    HumanoColorPantalon                 NVARCHAR(100) NULL,
+    HumanoTipoPantalon                  NVARCHAR(100) NULL,
+    HumanoDireccion                     NVARCHAR(100) NULL,
+    HumanoDeteccionFacial               NVARCHAR(100) NULL,
+    HumanoDeteccionFacialId             NVARCHAR(MAX) NULL,
+    -- Tipo:Vehiculo
+    VehiculoMatricula                   NVARCHAR(100) NULL,
+    VehiculoTipo                        NVARCHAR(100) NULL,
+    VehiculoColor                       NVARCHAR(100) NULL,
+    VehiculoLogo                        NVARCHAR(100) NULL
+
+    CONSTRAINT FK_EventoDetallesDeteccionTipoMultiobjetivo_Eventos
+        FOREIGN KEY (EventoIdInterno)
+        REFERENCES Eventos(IdInterno)
+        ON DELETE CASCADE
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_EventoDetallesDeteccionTipoMultiobjetivo_EventoIdInterno
+EventoDetallesDeteccionTipoMultiobjetivo(EventoIdInterno);
+GO
+
 
 
 
