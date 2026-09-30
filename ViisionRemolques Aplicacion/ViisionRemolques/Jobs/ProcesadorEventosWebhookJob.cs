@@ -19,6 +19,7 @@ namespace ViisionRemolques.Jobs
         private readonly EventoCapturaFacialRepository _eventoCapturaFacialRepository;
         private readonly EventoDeteccionTipoMultiobjetivoRepository _eventoDeteccionTipoMultiobjetivoepository;
         private readonly EventoRecuentoPersonasRepository _eventoRecuentoPersonasRepository;
+        private readonly EventoTraficoRodadoRepository _eventoTraficoRodadoRepository;
 
         public ProcesadorEventosWebhookJob(
             ILogger<ProcesadorEventosWebhookJob> logger,
@@ -29,7 +30,8 @@ namespace ViisionRemolques.Jobs
             EventoArmadoPistaPersonaRepository eventoArmadoPersonaRepository,
             EventoCapturaFacialRepository eventoCapturaFacialRepository,
             EventoDeteccionTipoMultiobjetivoRepository eventoDeteccionTipoMultiobjetivoepository,
-            EventoRecuentoPersonasRepository eventoRecuentoPersonasRepository)
+            EventoRecuentoPersonasRepository eventoRecuentoPersonasRepository,
+            EventoTraficoRodadoRepository eventoTraficoRodadoRepository)
         {
             _logger = logger;
             _almacenamientoImagenesService = almacenamientoImagenesService;
@@ -40,6 +42,7 @@ namespace ViisionRemolques.Jobs
             _eventoCapturaFacialRepository = eventoCapturaFacialRepository;
             _eventoDeteccionTipoMultiobjetivoepository = eventoDeteccionTipoMultiobjetivoepository;
             _eventoRecuentoPersonasRepository = eventoRecuentoPersonasRepository;
+            _eventoTraficoRodadoRepository = eventoTraficoRodadoRepository;
         }
 
         public async Task ProcesarEventoAsync(
@@ -84,7 +87,8 @@ namespace ViisionRemolques.Jobs
                             .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                     case VCAModoEnum.TraficoRodado:
-                        // TODO: Implementar cuando esté disponible
+                        await _eventoTraficoRodadoRepository
+                            .InsertarAsync(eventoExtractorModelo, ImagenesPaths: imagenesPaths, Payload: payload);
                         break;
                 }
             }

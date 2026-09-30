@@ -431,7 +431,7 @@ CREATE TABLE EventoDetallesDeteccionTipoMultiobjetivo(
 GO
 
 CREATE NONCLUSTERED INDEX IX_EventoDetallesDeteccionTipoMultiobjetivo_EventoIdInterno
-EventoDetallesDeteccionTipoMultiobjetivo(EventoIdInterno);
+ON EventoDetallesDeteccionTipoMultiobjetivo(EventoIdInterno);
 GO
 
 CREATE TABLE EventoDetallesRecuentoPersonas(
@@ -455,10 +455,34 @@ CREATE TABLE EventoDetallesRecuentoPersonas(
 );
 GO
 
-CREATE NONCLUSTERED INDEX IX_EventoDetallesRecuentoPersonasl_EventoIdInterno
+CREATE NONCLUSTERED INDEX IX_EventoDetallesRecuentoPersonas_EventoIdInterno
 ON EventoDetallesRecuentoPersonas(EventoIdInterno);
 GO
 
+
+
+CREATE TABLE EventoDetallesTraficoRodado(
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    EventoIdInterno                     BIGINT NOT NULL,
+
+    VehiculosTotal                      INT NULL,
+    VehiculosFlujoAscendente            INT NULL,
+    VehiculosFlujoDescendente           INT NULL,
+
+    MotocicletasTotal                   INT NULL,
+    MotocicletasFlujoAscendente         INT NULL,
+    MotocicletasFlujoDescendente        INT NULL,
+
+    CONSTRAINT FK_EventoDetallesTraficoRodado_Eventos
+        FOREIGN KEY (EventoIdInterno)
+        REFERENCES Eventos(IdInterno)
+        ON DELETE CASCADE
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_EventoDetallesTraficoRodado_EventoIdInterno
+ON EventoDetallesTraficoRodado(EventoIdInterno);
+GO
 
 
 --TABLA Imagenes ---------------------------------------------------------//
