@@ -74,7 +74,9 @@ Uso: node reenviar.js [carpeta-de-sesion] [opciones]
   [carpeta-de-sesion]      Carpeta con las peticiones (ej. peticiones/MQxoN2dUnJ5-)
                            Si se omite, se abre un selector visual sobre peticiones/
                            donde se elige la carpeta y si se reenvia entera o
-                           solo una peticion suya.
+                           solo una peticion suya. Ese menu principal trae
+                           ademas la opcion "Cambiar destino", que abre un
+                           editor para el dominio y el endpoint sin salir.
 
 Opciones:
   -d, --destino <url>      URL destino          (por defecto http://localhost:5106/v1/api/webhook)
@@ -325,6 +327,231 @@ function seleccionarMenu(titulo, opciones, { permitirAtras = false } = {}) {
   });
 }
 
+// Parte una URL de destino en los dos trozos que se editan por separado:
+// dominio (protocolo + host + puerto) y endpoint (ruta + query).
+function partirDestino(url) {
+  try {
+    const u = new URL(url);
+    return { dominio: u.origin, endpoint: u.pathname + u.search };
+  } catch {
+    // Si lo guardado no es una URL valida se deja tal cual para poder arreglarlo.
+    return { dominio: url || '', endpoint: '' };
+  }
+}
+
+// Junta dominio + endpoint y valida el resultado. Lanza si no sale una URL
+// http(s) usable. Completa el protocolo y la barra inicial del endpoint.
+function unirDestino(dominio, endpoint) {
+  let d = String(dominio).trim();
+  if (!d) throw new Error('El dominio no puede estar vacío.');
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(d)) d = `http://${d}`;
+
+  let base;
+  try {
+    base = new URL(d);
+  } catch {
+    throw new Error('Dominio no válido.');
+  }
+  if (base.protocol !== 'http:' && base.protocol !== 'https:') {
+    throw new Error('Solo se admite http o https.');
+  }
+  if (!base.hostname) throw new Error('Falta el host en el dominio.');
+
+  let e = String(endpoint).trim();
+  if (e && !e.startsWith('/')) e = `/${e}`;
+
+  // origin normaliza el dominio y deja fuera cualquier ruta: la ruta la pone
+  // el endpoint, que es el otro campo.
+  return base.origin + e;
+}
+
+// Pantalla para cambiar el destino completo sin reiniciar el programa:
+// dos campos editables (dominio y endpoint) con cursor, validacion en vivo
+// y vista previa de la URL final. Devuelve la URL nueva, o null si se cancela.
+function editarDestino(destinoActual) {
+  return new Promise((resolve, reject) => {
+    if (!process.stdin.isTTY || !process.stdout.isTTY) {
+      reject(new Error('Hace falta una terminal interactiva (TTY) para editar el destino.'));
+      return;
+    }
+
+    const partes = partirDestino(destinoActual);
+    const campos = [
+      { etiqueta: 'Dominio ', pista: 'http://localhost:5106', valor: partes.dominio },
+      { etiqueta: 'Endpoint', pista: '/v1/api/webhook', valor: partes.endpoint },
+    ];
+
+    let activo = 0;
+    let cursor = campos[0].valor.length;
+    let aviso = null;
+    const b = TINTA.esmeraldaOscura;
+
+    // Dibuja el valor de un campo con el cursor marcado en video inverso.
+    const conCursor = (valor, pos) => {
+      const bajo = valor.slice(0, pos);
+      const sobre = valor.slice(pos, pos + 1) || ' ';
+      const alto = valor.slice(pos + 1);
+      return `${TINTA.blanco}${bajo}${SIN_COLOR ? '' : '\x1b[7m'}${sobre}${TINTA.reset}${TINTA.blanco}${alto}${TINTA.reset}`;
+    };
+
+    const dibujar = () => {
+      limpiarPantalla();
+
+      const anchoTerminal = process.stdout.columns || 80;
+      const anchoContenido = Math.max(46, anchoTerminal - 4);
+      const anchoInterior = anchoContenido + 2;
+
+      let previa;
+      try {
+        previa = unirDestino(campos[0].valor, campos[1].valor);
+        aviso = null;
+      } catch (err) {
+        previa = null;
+        aviso = err.message;
+      }
+
+      // Relleno hasta el borde derecho contando solo los caracteres visibles.
+      const fila = (plano, pintado) =>
+        `${b}│${TINTA.reset} ${pintado}${' '.repeat(Math.max(0, anchoContenido - plano.length))} ${b}│${TINTA.reset}`;
+
+      const lineas = [];
+      lineas.push(`${b}╭${'─'.repeat(anchoInterior)}╮${TINTA.reset}`);
+
+      const titulo = '▍ Destino del reenvío';
+      lineas.push(fila(titulo, `${TINTA.bold}${TINTA.esmeralda}${titulo}${TINTA.reset}`));
+      lineas.push(`${b}├${'─'.repeat(anchoInterior)}┤${TINTA.reset}`);
+
+      campos.forEach((campo, i) => {
+        const vacio = campo.valor.length === 0;
+        const valorPlano = vacio ? campo.pista : campo.valor;
+        const marca = i === activo ? '❯ ' : '  ';
+        const plano = `${marca}${campo.etiqueta}  ${valorPlano}`;
+
+        let pintado;
+        if (i === activo) {
+          const valor = vacio
+            ? `${TINTA.grisOscuro}${campo.pista}${TINTA.reset}`
+            : conCursor(campo.valor, cursor);
+          // Con el campo vacio el cursor se pinta al principio de la pista.
+          const valorFinal = vacio
+            ? `${SIN_COLOR ? '' : '\x1b[7m'}${campo.pista[0]}${TINTA.reset}${TINTA.grisOscuro}${campo.pista.slice(1)}${TINTA.reset}`
+            : valor;
+          pintado = `${TINTA.esmeralda}${marca}${TINTA.bold}${campo.etiqueta}${TINTA.reset}  ${valorFinal}`;
+        } else {
+          const valor = vacio
+            ? `${TINTA.grisOscuro}${campo.pista}${TINTA.reset}`
+            : `${TINTA.grisClaro}${campo.valor}${TINTA.reset}`;
+          pintado = `${marca}${TINTA.grisOscuro}${campo.etiqueta}${TINTA.reset}  ${valor}`;
+        }
+        lineas.push(fila(plano, pintado));
+      });
+
+      lineas.push(fila('', ''));
+
+      const etiquetaPrevia = previa ? '  URL       ' : '  Error     ';
+      const textoPrevia = previa || aviso;
+      const planoPrevia = `${etiquetaPrevia}${textoPrevia}`;
+      lineas.push(
+        fila(
+          planoPrevia,
+          `${TINTA.grisOscuro}${etiquetaPrevia}${TINTA.reset}` +
+            `${previa ? TINTA.esmeralda : TINTA.rojo}${textoPrevia}${TINTA.reset}`
+        )
+      );
+
+      lineas.push(`${b}╰${'─'.repeat(anchoInterior)}╯${TINTA.reset}`);
+      lineas.push(
+        '',
+        `${TINTA.grisOscuro}Tab/↑/↓${TINTA.reset} cambiar campo   ` +
+          `${TINTA.grisOscuro}←/→${TINTA.reset} mover   ` +
+          `${TINTA.grisOscuro}Ctrl+U${TINTA.reset} vaciar   ` +
+          `${TINTA.esmeralda}Enter${TINTA.reset} guardar   ` +
+          `${TINTA.rojo}Esc${TINTA.reset} cancelar`
+      );
+      process.stdout.write(lineas.join('\n') + '\n');
+    };
+
+    const limpiar = () => {
+      process.stdin.setRawMode(false);
+      process.stdin.pause();
+      process.stdin.removeListener('keypress', onTecla);
+      process.stdout.removeListener('resize', dibujar);
+    };
+
+    const irACampo = (i) => {
+      activo = (i + campos.length) % campos.length;
+      cursor = campos[activo].valor.length;
+    };
+
+    const onTecla = (str, tecla) => {
+      if (!tecla) return;
+      const campo = campos[activo];
+
+      if (tecla.name === 'escape') {
+        limpiar();
+        resolve(null);
+        return;
+      }
+      if (tecla.ctrl && tecla.name === 'c') {
+        limpiar();
+        console.log('\nCancelado.');
+        process.exit(0);
+      }
+      if (tecla.name === 'return') {
+        let destino;
+        try {
+          destino = unirDestino(campos[0].valor, campos[1].valor);
+        } catch {
+          dibujar(); // deja el error a la vista y sigue editando
+          return;
+        }
+        limpiar();
+        resolve(destino);
+        return;
+      }
+      if (tecla.name === 'tab') {
+        irACampo(tecla.shift ? activo - 1 : activo + 1);
+      } else if (tecla.name === 'down') {
+        irACampo(activo + 1);
+      } else if (tecla.name === 'up') {
+        irACampo(activo - 1);
+      } else if (tecla.name === 'left') {
+        cursor = Math.max(0, cursor - 1);
+      } else if (tecla.name === 'right') {
+        cursor = Math.min(campo.valor.length, cursor + 1);
+      } else if (tecla.name === 'home') {
+        cursor = 0;
+      } else if (tecla.name === 'end') {
+        cursor = campo.valor.length;
+      } else if (tecla.ctrl && tecla.name === 'u') {
+        campo.valor = '';
+        cursor = 0;
+      } else if (tecla.name === 'backspace') {
+        if (cursor > 0) {
+          campo.valor = campo.valor.slice(0, cursor - 1) + campo.valor.slice(cursor);
+          cursor--;
+        }
+      } else if (tecla.name === 'delete') {
+        campo.valor = campo.valor.slice(0, cursor) + campo.valor.slice(cursor + 1);
+      } else if (str && !tecla.ctrl && !tecla.meta && !/[\x00-\x1f]/.test(str)) {
+        campo.valor = campo.valor.slice(0, cursor) + str + campo.valor.slice(cursor);
+        cursor += str.length;
+      } else {
+        return; // tecla sin efecto: no hace falta redibujar
+      }
+
+      dibujar();
+    };
+
+    readline.emitKeypressEvents(process.stdin);
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.on('keypress', onTecla);
+    process.stdout.on('resize', dibujar);
+    dibujar();
+  });
+}
+
 // Saca el tipo de evento del cuerpo crudo. Funciona igual para XML suelto y
 // para multipart, porque en multipart el XML viaja inline dentro del sobre.
 function tipoEvento(cuerpo) {
@@ -382,7 +609,7 @@ function cargarPeticiones(dirSesion, opciones) {
 
 // Selector visual: elige carpeta de sesion dentro de peticiones/ y despues
 // si se reenvia entera o solo una de sus peticiones.
-async function elegirInteractivo() {
+async function elegirInteractivo(opciones) {
   const raiz = path.join(__dirname, 'peticiones');
   if (!fs.existsSync(raiz)) {
     throw new Error(`No existe la carpeta de peticiones: ${raiz}`);
@@ -405,13 +632,26 @@ async function elegirInteractivo() {
     return { label: nombre, sufijo: `(${n} peticiones)`, value: nombre };
   });
 
+  // Valor reservado: no es una sesion, abre el editor de destino.
+  const CAMBIAR_DESTINO = '\0destino';
+  const opcionDestino = { label: '⚙  Cambiar destino (dominio + endpoint)', sufijo: '', value: CAMBIAR_DESTINO };
+  const menuPrincipal = [...opcionesSesion, opcionDestino];
+
   // Maquina de estados simple para poder ir hacia atras entre pasos.
   let paso = 'sesion';
   let dirSesion, todas;
 
   while (true) {
     if (paso === 'sesion') {
-      const sesionElegida = await seleccionarMenu('Elige la carpeta de sesion:', opcionesSesion);
+      opcionDestino.sufijo = opciones.destino; // refleja el destino vigente
+      const sesionElegida = await seleccionarMenu('Elige la carpeta de sesion:', menuPrincipal);
+
+      if (sesionElegida === CAMBIAR_DESTINO) {
+        const nuevo = await editarDestino(opciones.destino);
+        if (nuevo) opciones.destino = nuevo;
+        continue; // vuelve al menu principal con el destino actualizado
+      }
+
       dirSesion = path.join(raiz, sesionElegida);
       todas = cargarPeticionesCrudo(dirSesion);
       if (!todas.length) {
@@ -554,7 +794,7 @@ async function main() {
     } else {
       let eleccion;
       try {
-        eleccion = await elegirInteractivo();
+        eleccion = await elegirInteractivo(opciones);
       } catch (err) {
         console.error(err.message);
         process.exit(1);
