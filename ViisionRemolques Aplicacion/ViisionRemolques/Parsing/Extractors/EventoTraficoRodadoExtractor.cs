@@ -12,6 +12,7 @@ namespace ViisionRemolques.Parsing.Extractors
         private static readonly string[] EventosAplicables =
         [
             EventoTraficoRodadoEnum.TPSRealTime,
+            EventoTraficoRodadoEnum.TPS
         ];
 
         public bool AplicaPara(string eventType, XDocument? doc = null) =>
@@ -40,7 +41,7 @@ namespace ViisionRemolques.Parsing.Extractors
                 // Iteramos los carriles dentro del TargetInfo de este Target
                 foreach (var nodoLane in nodoTarget.XPathSelectElements("./targetinfo/laneinfo"))
                 {
-                    if (int.TryParse(nodoLane.Buscar("./volum"), out int volum))
+                    if (int.TryParse(nodoLane.Buscar("./volum", "./arrivalflow"), out int volum))
                     {
                         sumaVolumTarget += volum;
                     }
@@ -100,5 +101,6 @@ namespace ViisionRemolques.Parsing.Extractors
     public static class EventoTraficoRodadoEnum
     {
         public static readonly string TPSRealTime = "TPSRealTime";
+        public static readonly string TPS = "TPS";
     }
 }
