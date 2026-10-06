@@ -74,9 +74,11 @@ Uso: node reenviar.js [carpeta-de-sesion] [opciones]
   [carpeta-de-sesion]      Carpeta con las peticiones (ej. peticiones/MQxoN2dUnJ5-)
                            Si se omite, se abre un selector visual sobre peticiones/
                            donde se elige la carpeta y si se reenvia entera o
-                           solo una peticion suya. Ese menu principal trae
-                           ademas la opcion "Cambiar destino", que abre un
-                           editor para el dominio y el endpoint sin salir.
+                           solo una peticion suya. En ese menu: T reenvia TODAS
+                           las sesiones una detras de otra; B borra la sesion
+                           resaltada (pide confirmacion); R le cambia el nombre;
+                           D abre un editor para el dominio y el endpoint, y C
+                           cambia la concurrencia; todo sin salir.
 
 Opciones:
   -d, --destino <url>      URL destino          (por defecto http://localhost:5106/v1/api/webhook)
@@ -202,7 +204,7 @@ const limpiarPantalla = () => process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
 // Menu de flechas por terminal (sin dependencias externas). Devuelve el
 // "value" de la opcion elegida con Enter; Esc/Ctrl+C cancela el proceso;
 // Backspace/Izquierda devuelve ATRAS si permitirAtras esta activo.
-function seleccionarMenu(titulo, opciones, { permitirAtras = false } = {}) {
+function seleccionarMenu(titulo, opciones, { permitirAtras = false, atajos = [] } = {}) {
   return new Promise((resolve, reject) => {
     if (!process.stdin.isTTY || !process.stdout.isTTY) {
       reject(new Error('Hace falta una terminal interactiva (TTY) para el selector visual. Pasa la carpeta de sesion como argumento.'));
@@ -283,9 +285,14 @@ function seleccionarMenu(titulo, opciones, { permitirAtras = false } = {}) {
           ? `${TINTA.grisOscuro}(${indice + 1}/${opciones.length})${TINTA.reset}   `
           : '';
       const atras = permitirAtras ? `   ${TINTA.amarillo}←${TINTA.reset} atrás` : '';
+      // Atajos van antes de "salir" por defecto; con posicion:'despues' van
+      // al final (p.ej. "destino", que es secundario frente a la accion principal).
+      const segmento = (a) => `   ${TINTA.esmeralda}${a.tecla.toUpperCase()}${TINTA.reset} ${a.etiqueta}`;
+      const antesSalir = atajos.filter((a) => a.posicion !== 'despues').map(segmento).join('');
+      const despuesSalir = atajos.filter((a) => a.posicion === 'despues').map(segmento).join('');
       lineas.push(
         '',
-        `${paginacion}${TINTA.grisOscuro}↑/↓${TINTA.reset} mover   ${TINTA.esmeralda}Enter${TINTA.reset} elegir${atras}   ${TINTA.rojo}Esc${TINTA.reset} salir`
+        `${paginacion}${TINTA.grisOscuro}↑/↓${TINTA.reset} mover   ${TINTA.esmeralda}Enter${TINTA.reset} elegir${atras}${antesSalir}   ${TINTA.rojo}Esc${TINTA.reset} salir${despuesSalir}`
       );
       process.stdout.write(lineas.join('\n') + '\n');
     };
@@ -299,7 +306,13 @@ function seleccionarMenu(titulo, opciones, { permitirAtras = false } = {}) {
 
     const onTecla = (_str, tecla) => {
       if (!tecla) return;
-      if (tecla.name === 'up') {
+      const atajo = atajos.find((a) => a.tecla === tecla.name);
+      if (atajo) {
+        limpiar();
+        // Objeto (no el value plano) para distinguirlo de una eleccion normal
+        // y para que el llamador sepa sobre que fila estaba el atajo.
+        resolve({ atajo: atajo.value, resaltada: opciones[indice] });
+      } else if (tecla.name === 'up') {
         indice = (indice - 1 + opciones.length) % opciones.length;
         dibujar();
       } else if (tecla.name === 'down') {
@@ -365,6 +378,15 @@ function unirDestino(dominio, endpoint) {
   return base.origin + e;
 }
 
+// Dibuja un valor de texto con el cursor marcado en video inverso. Compartida
+// por editarDestino (dos campos) y editarTexto (un campo, p.ej. renombrar).
+const conCursor = (valor, pos) => {
+  const bajo = valor.slice(0, pos);
+  const sobre = valor.slice(pos, pos + 1) || ' ';
+  const alto = valor.slice(pos + 1);
+  return `${TINTA.blanco}${bajo}${SIN_COLOR ? '' : '\x1b[7m'}${sobre}${TINTA.reset}${TINTA.blanco}${alto}${TINTA.reset}`;
+};
+
 // Pantalla para cambiar el destino completo sin reiniciar el programa:
 // dos campos editables (dominio y endpoint) con cursor, validacion en vivo
 // y vista previa de la URL final. Devuelve la URL nueva, o null si se cancela.
@@ -385,14 +407,6 @@ function editarDestino(destinoActual) {
     let cursor = campos[0].valor.length;
     let aviso = null;
     const b = TINTA.esmeraldaOscura;
-
-    // Dibuja el valor de un campo con el cursor marcado en video inverso.
-    const conCursor = (valor, pos) => {
-      const bajo = valor.slice(0, pos);
-      const sobre = valor.slice(pos, pos + 1) || ' ';
-      const alto = valor.slice(pos + 1);
-      return `${TINTA.blanco}${bajo}${SIN_COLOR ? '' : '\x1b[7m'}${sobre}${TINTA.reset}${TINTA.blanco}${alto}${TINTA.reset}`;
-    };
 
     const dibujar = () => {
       limpiarPantalla();
@@ -425,7 +439,11 @@ function editarDestino(destinoActual) {
         const vacio = campo.valor.length === 0;
         const valorPlano = vacio ? campo.pista : campo.valor;
         const marca = i === activo ? '❯ ' : '  ';
-        const plano = `${marca}${campo.etiqueta}  ${valorPlano}`;
+        // Cursor al final de un campo no vacio pinta un hueco extra tras el
+        // ultimo caracter (ver conCursor): hay que contarlo o el padding de
+        // la fila se queda corto y el borde derecho salta al cambiar de campo.
+        const cursorAlFinal = i === activo && !vacio && cursor >= campo.valor.length;
+        const plano = `${marca}${campo.etiqueta}  ${valorPlano}${cursorAlFinal ? ' ' : ''}`;
 
         let pintado;
         if (i === activo) {
@@ -552,6 +570,139 @@ function editarDestino(destinoActual) {
   });
 }
 
+// Pantalla de un solo campo de texto con cursor y validacion en vivo (p.ej.
+// renombrar una sesion). `validar(valor)` debe devolver un mensaje de error
+// (string) si el valor no vale, o null/undefined si esta bien. Devuelve el
+// valor final, o null si se cancela.
+function editarTexto(titulo, valorInicial, validar) {
+  return new Promise((resolve, reject) => {
+    if (!process.stdin.isTTY || !process.stdout.isTTY) {
+      reject(new Error('Hace falta una terminal interactiva (TTY) para editar el nombre.'));
+      return;
+    }
+
+    let valor = valorInicial;
+    let cursor = valor.length;
+    const b = TINTA.esmeraldaOscura;
+
+    const dibujar = () => {
+      limpiarPantalla();
+
+      const anchoTerminal = process.stdout.columns || 80;
+      const anchoContenido = Math.max(46, anchoTerminal - 4);
+      const anchoInterior = anchoContenido + 2;
+
+      const error = validar(valor);
+
+      const fila = (plano, pintado) =>
+        `${b}│${TINTA.reset} ${pintado}${' '.repeat(Math.max(0, anchoContenido - plano.length))} ${b}│${TINTA.reset}`;
+
+      const lineas = [];
+      lineas.push(`${b}╭${'─'.repeat(anchoInterior)}╮${TINTA.reset}`);
+
+      const tit = `▍ ${titulo}`;
+      lineas.push(fila(tit, `${TINTA.bold}${TINTA.esmeralda}${tit}${TINTA.reset}`));
+      lineas.push(`${b}├${'─'.repeat(anchoInterior)}┤${TINTA.reset}`);
+
+      // Igual que en editarDestino: el cursor al final del texto pinta un
+      // hueco de mas que hay que contar en el "plano" o el borde salta.
+      const cursorAlFinal = cursor >= valor.length;
+      const marca = '❯ ';
+      const plano = `${marca}${valor}${cursorAlFinal ? ' ' : ''}`;
+      const pintado = `${TINTA.esmeralda}${marca}${TINTA.reset}${conCursor(valor, cursor)}`;
+      lineas.push(fila(plano, pintado));
+
+      lineas.push(fila('', ''));
+
+      const etiquetaAviso = error ? '  Error   ' : '  Listo   ';
+      const textoAviso = error || 'Enter para guardar.';
+      const planoAviso = `${etiquetaAviso}${textoAviso}`;
+      lineas.push(
+        fila(
+          planoAviso,
+          `${TINTA.grisOscuro}${etiquetaAviso}${TINTA.reset}` +
+            `${error ? TINTA.rojo : TINTA.esmeralda}${textoAviso}${TINTA.reset}`
+        )
+      );
+
+      lineas.push(`${b}╰${'─'.repeat(anchoInterior)}╯${TINTA.reset}`);
+      lineas.push(
+        '',
+        `${TINTA.grisOscuro}←/→${TINTA.reset} mover   ` +
+          `${TINTA.grisOscuro}Ctrl+U${TINTA.reset} vaciar   ` +
+          `${TINTA.esmeralda}Enter${TINTA.reset} guardar   ` +
+          `${TINTA.rojo}Esc${TINTA.reset} cancelar`
+      );
+      process.stdout.write(lineas.join('\n') + '\n');
+    };
+
+    const limpiar = () => {
+      process.stdin.setRawMode(false);
+      process.stdin.pause();
+      process.stdin.removeListener('keypress', onTecla);
+      process.stdout.removeListener('resize', dibujar);
+    };
+
+    const onTecla = (str, tecla) => {
+      if (!tecla) return;
+
+      if (tecla.name === 'escape') {
+        limpiar();
+        resolve(null);
+        return;
+      }
+      if (tecla.ctrl && tecla.name === 'c') {
+        limpiar();
+        console.log('\nCancelado.');
+        process.exit(0);
+      }
+      if (tecla.name === 'return') {
+        if (validar(valor)) {
+          dibujar(); // deja el error a la vista y sigue editando
+          return;
+        }
+        limpiar();
+        resolve(valor);
+        return;
+      }
+
+      if (tecla.name === 'left') {
+        cursor = Math.max(0, cursor - 1);
+      } else if (tecla.name === 'right') {
+        cursor = Math.min(valor.length, cursor + 1);
+      } else if (tecla.name === 'home') {
+        cursor = 0;
+      } else if (tecla.name === 'end') {
+        cursor = valor.length;
+      } else if (tecla.ctrl && tecla.name === 'u') {
+        valor = '';
+        cursor = 0;
+      } else if (tecla.name === 'backspace') {
+        if (cursor > 0) {
+          valor = valor.slice(0, cursor - 1) + valor.slice(cursor);
+          cursor--;
+        }
+      } else if (tecla.name === 'delete') {
+        valor = valor.slice(0, cursor) + valor.slice(cursor + 1);
+      } else if (str && !tecla.ctrl && !tecla.meta && !/[\x00-\x1f]/.test(str)) {
+        valor = valor.slice(0, cursor) + str + valor.slice(cursor);
+        cursor += str.length;
+      } else {
+        return; // tecla sin efecto: no hace falta redibujar
+      }
+
+      dibujar();
+    };
+
+    readline.emitKeypressEvents(process.stdin);
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.on('keypress', onTecla);
+    process.stdout.on('resize', dibujar);
+    dibujar();
+  });
+}
+
 // Saca el tipo de evento del cuerpo crudo. Funciona igual para XML suelto y
 // para multipart, porque en multipart el XML viaja inline dentro del sobre.
 function tipoEvento(cuerpo) {
@@ -615,27 +766,34 @@ async function elegirInteractivo(opciones) {
     throw new Error(`No existe la carpeta de peticiones: ${raiz}`);
   }
 
-  const sesiones = fs
-    .readdirSync(raiz, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
-    .map((e) => e.name)
-    .sort();
+  // Lee las carpetas de sesion en cada vuelta, porque borrar/renombrar cambia
+  // lo que hay en peticiones/ sin salir de este menu.
+  const listarSesiones = () => {
+    const sesiones = fs
+      .readdirSync(raiz, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .sort();
 
-  if (!sesiones.length) {
-    throw new Error(`No hay carpetas de sesion dentro de ${raiz}`);
-  }
+    if (!sesiones.length) {
+      throw new Error(`No hay carpetas de sesion dentro de ${raiz}`);
+    }
 
-  const opcionesSesion = sesiones.map((nombre) => {
-    const dir = path.join(raiz, nombre);
-    const n = fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).length;
-    // El sufijo va anclado al borde derecho de la caja (ver seleccionarMenu).
-    return { label: nombre, sufijo: `(${n} peticiones)`, value: nombre };
-  });
+    return sesiones.map((nombre) => {
+      const dir = path.join(raiz, nombre);
+      const n = fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).length;
+      // El sufijo va anclado al borde derecho de la caja (ver seleccionarMenu).
+      return { label: nombre, sufijo: `(${n} peticiones)`, value: nombre };
+    });
+  };
 
-  // Valor reservado: no es una sesion, abre el editor de destino.
-  const CAMBIAR_DESTINO = '\0destino';
-  const opcionDestino = { label: '⚙  Cambiar destino (dominio + endpoint)', sufijo: '', value: CAMBIAR_DESTINO };
-  const menuPrincipal = [...opcionesSesion, opcionDestino];
+  // Valores reservados: no son una sesion, se disparan con atajo de tecla en
+  // vez de ser filas del listado.
+  const CAMBIAR_DESTINO = Symbol('destino');
+  const ENVIAR_TODO = Symbol('enviarTodo');
+  const BORRAR_SESION = Symbol('borrar');
+  const RENOMBRAR_SESION = Symbol('renombrar');
+  const CAMBIAR_CONCURRENCIA = Symbol('concurrencia');
 
   // Maquina de estados simple para poder ir hacia atras entre pasos.
   let paso = 'sesion';
@@ -643,15 +801,79 @@ async function elegirInteractivo(opciones) {
 
   while (true) {
     if (paso === 'sesion') {
-      opcionDestino.sufijo = opciones.destino; // refleja el destino vigente
-      const sesionElegida = await seleccionarMenu('Elige la carpeta de sesion:', menuPrincipal);
+      const resultado = await seleccionarMenu('Elige la carpeta de sesion:', listarSesiones(), {
+        atajos: [
+          { tecla: 't', etiqueta: 'enviar todo', value: ENVIAR_TODO },
+          { tecla: 'b', etiqueta: 'borrar', value: BORRAR_SESION },
+          { tecla: 'r', etiqueta: 'renombrar', value: RENOMBRAR_SESION },
+          { tecla: 'd', etiqueta: `destino (${opciones.destino})`, value: CAMBIAR_DESTINO, posicion: 'despues' },
+          {
+            tecla: 'c',
+            etiqueta: `concurrencia (${opciones.concurrencia})`,
+            value: CAMBIAR_CONCURRENCIA,
+            posicion: 'despues',
+          },
+        ],
+      });
 
-      if (sesionElegida === CAMBIAR_DESTINO) {
-        const nuevo = await editarDestino(opciones.destino);
-        if (nuevo) opciones.destino = nuevo;
-        continue; // vuelve al menu principal con el destino actualizado
+      // Atajo disparado sobre la fila resaltada (objeto); una sesion elegida
+      // con Enter llega como el value plano (string).
+      if (resultado && typeof resultado === 'object') {
+        const { atajo, resaltada } = resultado;
+
+        if (atajo === ENVIAR_TODO) {
+          limpiarPantalla();
+          return { enviarTodo: true };
+        }
+
+        if (atajo === CAMBIAR_DESTINO) {
+          const nuevo = await editarDestino(opciones.destino);
+          if (nuevo) opciones.destino = nuevo;
+          continue; // vuelve al menu principal con el destino actualizado
+        }
+
+        if (atajo === CAMBIAR_CONCURRENCIA) {
+          const nuevaStr = await editarTexto('Concurrencia', String(opciones.concurrencia), (valor) => {
+            const limpio = valor.trim();
+            if (!/^\d+$/.test(limpio)) return 'Tiene que ser un número entero.';
+            if (Number(limpio) < 1) return 'Tiene que ser al menos 1.';
+            return null;
+          });
+          if (nuevaStr) opciones.concurrencia = Number(nuevaStr.trim());
+          continue; // vuelve al menu principal con la concurrencia actualizada
+        }
+
+        if (atajo === BORRAR_SESION) {
+          const nombreSesion = resaltada.value;
+          const confirmacion = await seleccionarMenu(`Borrar "${nombreSesion}"? No se puede deshacer.`, [
+            { label: 'Cancelar', value: 'no' },
+            { label: 'Borrar definitivamente', value: 'si' },
+          ]);
+          if (confirmacion === 'si') {
+            fs.rmSync(path.join(raiz, nombreSesion), { recursive: true, force: true });
+          }
+          continue; // vuelve al menu principal con el listado actualizado
+        }
+
+        if (atajo === RENOMBRAR_SESION) {
+          const nombreActual = resaltada.value;
+          const nuevoNombre = await editarTexto('Renombrar sesión', nombreActual, (valor) => {
+            const limpio = valor.trim();
+            if (!limpio) return 'El nombre no puede estar vacío.';
+            if (/[\\/]/.test(limpio)) return 'El nombre no puede contener \\ ni /.';
+            if (limpio !== nombreActual && fs.existsSync(path.join(raiz, limpio))) {
+              return 'Ya existe una sesión con ese nombre.';
+            }
+            return null;
+          });
+          if (nuevoNombre && nuevoNombre.trim() && nuevoNombre !== nombreActual) {
+            fs.renameSync(path.join(raiz, nombreActual), path.join(raiz, nuevoNombre.trim()));
+          }
+          continue; // vuelve al menu principal con el listado actualizado
+        }
       }
 
+      const sesionElegida = resultado;
       dirSesion = path.join(raiz, sesionElegida);
       todas = cargarPeticionesCrudo(dirSesion);
       if (!todas.length) {
@@ -767,6 +989,102 @@ function mostrarResumen(dirSesion, opciones, peticiones, bytes) {
   console.log('');
 }
 
+// Reenvia una tanda de peticiones de una sesion y muestra resumen + informe.
+// Usada tanto para una sesion suelta como, una tras otra, por "enviar todo".
+async function enviarPeticiones(dirSesion, peticiones, opciones) {
+  const bytes = peticiones.reduce((total, p) => total + p.cuerpo.length, 0);
+  mostrarResumen(dirSesion, opciones, peticiones, bytes);
+
+  const resultados = [];
+  let siguiente = 0;
+  let completadas = 0;
+
+  // El contador se reescribe sobre si mismo con \r, asi que solo tiene
+  // sentido en una terminal: redirigido a fichero dejaria una linea por peticion.
+  const interactivo = process.stdout.isTTY && !opciones.detalle;
+
+  const progreso = () => {
+    if (!interactivo) return;
+    readline.cursorTo(process.stdout, 0);
+    readline.clearLine(process.stdout, 1);
+    process.stdout.write(barraProgreso(completadas, peticiones.length));
+  };
+
+  async function trabajador() {
+    while (siguiente < peticiones.length) {
+      const indice = siguiente++;
+      const peticion = peticiones[indice];
+
+      // Con "enviar todo" las peticiones vienen concatenadas de varias
+      // sesiones: el ritmo real solo tiene sentido dentro de la misma sesion.
+      const anterior = peticiones[indice - 1];
+      if (opciones.ritmoReal && indice > 0 && anterior.sesion === peticion.sesion) {
+        const hueco = peticion.recibidaEn - anterior.recibidaEn;
+        if (hueco > 0) await esperar(Math.min(hueco, 10000));
+      } else if (opciones.pausa > 0) {
+        await esperar(opciones.pausa);
+      }
+
+      const resultado = await enviar(peticion, opciones);
+      resultados.push(resultado);
+      completadas++;
+
+      if (opciones.detalle) {
+        const c = colorEstado(resultado.estado);
+        const marca = resultado.estado >= 200 && resultado.estado < 300 ? '✓' : '✗';
+        const idMostrado = peticion.sesion ? `${peticion.sesion} / ${peticion.id}` : peticion.id;
+        console.log(
+          `  ${c}${marca} ${String(resultado.estado || 'ERR').padEnd(4)}${TINTA.reset} ` +
+            `${TINTA.grisClaro}${peticion.evento.padEnd(18)}${TINTA.reset} ${String(resultado.ms.toFixed(0)).padStart(6)} ms  ` +
+            `${TINTA.grisOscuro}${idMostrado}${TINTA.reset}${resultado.error ? '  ' + TINTA.rojo + resultado.error + TINTA.reset : ''}`
+        );
+      } else {
+        progreso();
+      }
+    }
+  }
+
+  const arranque = Date.now();
+  await Promise.all(
+    Array.from({ length: Math.max(1, opciones.concurrencia) }, () => trabajador())
+  );
+  const total = (Date.now() - arranque) / 1000;
+
+  if (interactivo) {
+    readline.cursorTo(process.stdout, 0);
+    readline.clearLine(process.stdout, 0);
+  }
+
+  informe(resultados, total);
+  return { resultados, total };
+}
+
+// Junta las peticiones de TODAS las carpetas de sesion dentro de peticiones/
+// y las reenvia en una sola tanda (una sola pantalla de resumen + informe),
+// marcando cada peticion con el nombre de su sesion para los fallos.
+async function enviarTodasLasSesiones(opciones) {
+  const raiz = path.join(__dirname, 'peticiones');
+  const sesiones = fs
+    .readdirSync(raiz, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .sort();
+
+  const peticiones = [];
+  for (const nombre of sesiones) {
+    const deSesion = cargarPeticiones(path.join(raiz, nombre), opciones);
+    for (const p of deSesion) peticiones.push({ ...p, sesion: nombre });
+  }
+
+  if (!peticiones.length) {
+    console.error('No se encontro ninguna peticion que reenviar en ninguna sesion.');
+    return [];
+  }
+
+  const { resultados } = await enviarPeticiones(`${sesiones.length} sesiones (TODAS)`, peticiones, opciones);
+  return resultados;
+}
+
 async function main() {
   const opciones = parsearArgumentos(process.argv);
 
@@ -799,6 +1117,29 @@ async function main() {
         console.error(err.message);
         process.exit(1);
       }
+
+      if (eleccion.enviarTodo) {
+        // Mismo hint y mismo "repetir" que el reenvio de una sola sesion.
+        enviarTodo: while (true) {
+          const resultados = await enviarTodasLasSesiones(opciones);
+          if (!resultados.length) {
+            await esperarTecla('Enter para volver al inicio · Esc para salir');
+            continue seleccion;
+          }
+
+          const hint =
+            `${TINTA.esmeralda}R${TINTA.reset} reenviar (${resultados.length} peticiones)   ` +
+            `${TINTA.esmeralda}Enter${TINTA.reset} volver al inicio   ${TINTA.rojo}Esc${TINTA.reset} salir`;
+          const accion = await esperarAccion(hint);
+
+          if (accion === 'repetir') {
+            limpiarPantalla();
+            continue enviarTodo;
+          }
+          continue seleccion;
+        }
+      }
+
       dirSesion = eleccion.dirSesion;
       peticiones = eleccion.soloId
         ? eleccion.todas.filter((p) => p.id === eleccion.soloId)
@@ -830,66 +1171,7 @@ async function main() {
     // Bucle de reenvio: "Reenviar la misma seleccion" repite este bloque sin
     // volver a preguntar carpeta/peticion; "Volver al inicio" rompe a seleccion.
     reenvio: while (true) {
-      const bytes = peticiones.reduce((total, p) => total + p.cuerpo.length, 0);
-      mostrarResumen(dirSesion, opciones, peticiones, bytes);
-
-      const resultados = [];
-      let siguiente = 0;
-      let completadas = 0;
-
-      // El contador se reescribe sobre si mismo con \r, asi que solo tiene
-      // sentido en una terminal: redirigido a fichero dejaria una linea por peticion.
-      const interactivo = process.stdout.isTTY && !opciones.detalle;
-
-      const progreso = () => {
-        if (!interactivo) return;
-        readline.cursorTo(process.stdout, 0);
-        readline.clearLine(process.stdout, 1);
-        process.stdout.write(barraProgreso(completadas, peticiones.length));
-      };
-
-      async function trabajador() {
-        while (siguiente < peticiones.length) {
-          const indice = siguiente++;
-          const peticion = peticiones[indice];
-
-          if (opciones.ritmoReal && indice > 0) {
-            const hueco = peticion.recibidaEn - peticiones[indice - 1].recibidaEn;
-            if (hueco > 0) await esperar(Math.min(hueco, 10000));
-          } else if (opciones.pausa > 0) {
-            await esperar(opciones.pausa);
-          }
-
-          const resultado = await enviar(peticion, opciones);
-          resultados.push(resultado);
-          completadas++;
-
-          if (opciones.detalle) {
-            const c = colorEstado(resultado.estado);
-            const marca = resultado.estado >= 200 && resultado.estado < 300 ? '✓' : '✗';
-            console.log(
-              `  ${c}${marca} ${String(resultado.estado || 'ERR').padEnd(4)}${TINTA.reset} ` +
-                `${TINTA.grisClaro}${peticion.evento.padEnd(18)}${TINTA.reset} ${String(resultado.ms.toFixed(0)).padStart(6)} ms  ` +
-                `${TINTA.grisOscuro}${peticion.id}${TINTA.reset}${resultado.error ? '  ' + TINTA.rojo + resultado.error + TINTA.reset : ''}`
-            );
-          } else {
-            progreso();
-          }
-        }
-      }
-
-      const arranque = Date.now();
-      await Promise.all(
-        Array.from({ length: Math.max(1, opciones.concurrencia) }, () => trabajador())
-      );
-      const total = (Date.now() - arranque) / 1000;
-
-      if (interactivo) {
-        readline.cursorTo(process.stdout, 0);
-        readline.clearLine(process.stdout, 0);
-      }
-
-      informe(resultados, total);
+      const { resultados } = await enviarPeticiones(dirSesion, peticiones, opciones);
 
       const fallos = resultados.filter((r) => !(r.estado >= 200 && r.estado < 300));
       if (!modoInteractivo) process.exit(fallos.length ? 1 : 0);
@@ -935,14 +1217,17 @@ function informe(resultados, segundos) {
   const eventos = Object.entries(porEvento).sort((a, b) => b[1].ok + b[1].mal - (a[1].ok + a[1].mal));
   const maxTotal = Math.max(1, ...eventos.map(([, f]) => f.ok + f.mal));
   const anchoBarra = 18;
-  console.log(`  ${TINTA.grisOscuro}${'evento'.padEnd(20)}${'ok'.padStart(5)}${'fallo'.padStart(7)}${TINTA.reset}`);
+  // Ancho dinamico: con nombres de evento largos (p.ej. personQueueTimingStatistics)
+  // un padEnd fijo descuadra las columnas "ok"/"fallo" y la barra.
+  const anchoEvento = Math.max('evento'.length, ...eventos.map(([evento]) => evento.length)) + 2;
+  console.log(`  ${TINTA.grisOscuro}${'evento'.padEnd(anchoEvento)}${'ok'.padStart(5)}${'fallo'.padStart(7)}${TINTA.reset}`);
   for (const [evento, f] of eventos) {
     const llenas = Math.round(((f.ok + f.mal) / maxTotal) * anchoBarra);
     const barra = `${TINTA.esmeralda}${'█'.repeat(llenas)}${TINTA.grisOscuro}${'░'.repeat(anchoBarra - llenas)}${TINTA.reset}`;
     const colorMal = f.mal ? TINTA.rojo : TINTA.grisOscuro;
     const aviso = f.mal ? `  ${TINTA.rojo}◀ revisar${TINTA.reset}` : '';
     console.log(
-      `  ${TINTA.grisClaro}${evento.padEnd(20)}${TINTA.reset}${TINTA.esmeralda}${String(f.ok).padStart(5)}${TINTA.reset}` +
+      `  ${TINTA.grisClaro}${evento.padEnd(anchoEvento)}${TINTA.reset}${TINTA.esmeralda}${String(f.ok).padStart(5)}${TINTA.reset}` +
         `${colorMal}${String(f.mal).padStart(7)}${TINTA.reset}  ${barra}${aviso}`
     );
   }
@@ -959,8 +1244,9 @@ function informe(resultados, segundos) {
   if (fallos.length) {
     console.log(`\n${TINTA.bold}${TINTA.rojo}▍ FALLOS (${fallos.length})${TINTA.reset}`);
     for (const r of fallos.slice(0, 20)) {
+      const idMostrado = r.peticion.sesion ? `${r.peticion.sesion} / ${r.peticion.id}` : r.peticion.id;
       console.log(
-        `  ${TINTA.rojo}✗${TINTA.reset} ${TINTA.grisOscuro}${r.peticion.id}${TINTA.reset}  ${r.peticion.evento}  → ` +
+        `  ${TINTA.rojo}✗${TINTA.reset} ${TINTA.grisOscuro}${idMostrado}${TINTA.reset}  ${r.peticion.evento}  → ` +
           `${TINTA.rojo}${r.estado || 'ERROR'}${TINTA.reset}${r.error ? '  ' + TINTA.grisOscuro + r.error + TINTA.reset : ''}`
       );
     }
