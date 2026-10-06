@@ -11,7 +11,7 @@
             _basePath = Path.Combine(environment.ContentRootPath, "Archivos/Imagenes");
         }
 
-        public async Task<List<string>> Guardar(List<byte[]> imagenes, string extension = ".jpg")
+        public async Task<List<string>> Guardar(List<byte[]> imagenes, string extension = ".jpg", CancellationToken cancellationToken = default)
         {
             var rutasGuardadas = new List<string>();
 
@@ -46,7 +46,7 @@
                 var nombreArchivo = $"{Guid.NewGuid():N}{extension}";
                 var pathCompleto = Path.Combine(carpetaDestino, nombreArchivo);
 
-                await File.WriteAllBytesAsync(pathCompleto, imagenBytes);
+                await File.WriteAllBytesAsync(pathCompleto, imagenBytes, cancellationToken: cancellationToken);
                 rutasGuardadas.Add(pathCompleto);
             }
 

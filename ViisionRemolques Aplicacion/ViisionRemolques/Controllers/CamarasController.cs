@@ -19,7 +19,7 @@ namespace ViisionRemolques.Controllers
 
         [HttpGet]
         [Route("/test/id")]
-        public async Task<IActionResult> Test(long idInterno) {
+        public async Task<IActionResult> Test(long idInterno = 3) {
 
             // 1. Obtener la cámara desde el repositorio
             var camara = await _camaraRepository.ObtenerPorIdInternoAsync(idInterno);
@@ -28,10 +28,15 @@ namespace ViisionRemolques.Controllers
             {
                 return NotFound(new { message = $"No se encontró la cámara o el identificador go2rtc para el idInterno: {idInterno}" });
             }
+            
+            var heatMapInformacion = await _heatmapService.ObtenerHeatmap(camara, new HeatmapService.HeatmapInformacionRequest
+            {
+                TipoReporte = "daily",
+                ModeloEstadistico = "PDC",
+                Fecha = DateTime.Now,
+            });
 
-            var response  = await _heatmapService.ComprobarFuncionActivada(camara);
-
-            return Ok(response);
+            return Ok(heatMapInformacion);
         }
 
         [HttpGet]
