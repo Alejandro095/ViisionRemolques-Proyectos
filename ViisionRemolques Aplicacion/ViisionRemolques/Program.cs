@@ -1,6 +1,7 @@
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -18,6 +19,19 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddHealthChecks();
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var problemDetails = new ValidationProblemDetails(context.ModelState)
+        {
+            Title = "Parámetros inválidos",
+            Status = StatusCodes.Status400BadRequest
+        };
+        return new BadRequestObjectResult(problemDetails);
+    };
+});
 
 builder.Services.AddAuthentication(options =>
 {

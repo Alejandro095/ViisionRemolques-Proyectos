@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using ViisionRemolques.Enums;
 using ViisionRemolques.Repositories;
 using ViisionRemolques.Services.ISAPI;
@@ -20,7 +21,10 @@ namespace ViisionRemolques.Controllers
 
         [HttpGet]
         [Route("modo")]
-        public async Task<IActionResult> ObtenerModoActual(long idInterno, CancellationToken ct)
+        public async Task<IActionResult> ObtenerModoActual(
+            [Range(1, long.MaxValue, ErrorMessage = "El parámetro '{0}' debe ser un valor positivo.")]
+            long idInterno,
+            CancellationToken ct)
         {
             var camara = await _camaraRepository.ObtenerPorIdInternoAsync(idInterno);
 
@@ -50,7 +54,10 @@ namespace ViisionRemolques.Controllers
         [HttpPut]
         [Route("modo/{vca}")]
         public async Task<IActionResult> CambiarModo(
+            [Range(1, long.MaxValue, ErrorMessage = "El parámetro '{0}' debe ser un valor positivo.")]
             long idInterno,
+            [Required(ErrorMessage = "El parámetro '{0}' es obligatorio.")]
+            [StringLength(100, ErrorMessage = "El parámetro '{0}' no puede superar los {1} caracteres.")]
             string vca,
             CancellationToken ct)
         {
@@ -93,6 +100,7 @@ namespace ViisionRemolques.Controllers
         [HttpGet]
         [Route("modos")]
         public async Task<IActionResult> ObtenerModosSoportador(
+            [Range(1, long.MaxValue, ErrorMessage = "El parámetro '{0}' debe ser un valor positivo.")]
             long idInterno,
             CancellationToken ct)
         {
