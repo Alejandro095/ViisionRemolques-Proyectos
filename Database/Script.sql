@@ -35,16 +35,19 @@ CREATE TABLE Camaras (
     Digest_Usuario                      NVARCHAR(100) NULL,
     Digest_Contrasena                   NVARCHAR(256) NULL,
 
-    Soporta_PTZ                         BIT NOT NULL DEFAULT 0,
-    SoportaAudioBidireccional           BIT NOT NULL DEFAULT 0,
+    -- Funcionalidades
+    Soporta_AudioBidireccional          BIT NOT NULL DEFAULT 0,
 
-    -- Eventos Smart (Analiticas de Video)
-    EventoSmart_DeteccionIntrusiones    BIT NOT NULL DEFAULT 0,
-    EventoSmart_DeteccionCruceLinea     BIT NOT NULL DEFAULT 0,
-    EventoSmart_DeteccionEntradaArea    BIT NOT NULL DEFAULT 0,
-    EventoSmart_DeteccionSalidaArea     BIT NOT NULL DEFAULT 0,
-    EventoSmart_EventoCombinado         BIT NOT NULL DEFAULT 0,
-
+    Soporta_PtzMovimiento               BIT NOT NULL DEFAULT 0,
+    Soporta_PtzZoom                     BIT NOT NULL DEFAULT 0,
+    Soporta_PtzEnfoque                  BIT NOT NULL DEFAULT 0,
+    Soporta_PtzIris                     BIT NOT NULL DEFAULT 0,
+    Soporta_PtzLuz                      BIT NOT NULL DEFAULT 0,
+    Soporta_PtzEscobilla                BIT NOT NULL DEFAULT 0,
+    Soporta_PtzEnfoqueAuxiliar          BIT NOT NULL DEFAULT 0,
+    Soporta_PtzInicializacionObjetivo   BIT NOT NULL DEFAULT 0,
+    Soporta_PtzCalibracionZoom          BIT NOT NULL DEFAULT 0,
+    
     -- Auditoria
     FechaCreacion                       DATETIME NOT NULL DEFAULT GETDATE()
 );
@@ -59,35 +62,39 @@ INSERT INTO Camaras (
     PlataformaVCA,
     Digest_Usuario,
     Digest_Contrasena,
-    Soporta_PTZ,
-    SoportaAudioBidireccional,
-    EventoSmart_DeteccionIntrusiones,
-    EventoSmart_DeteccionCruceLinea,
-    EventoSmart_DeteccionEntradaArea,
-    EventoSmart_DeteccionSalidaArea,
-    EventoSmart_EventoCombinado
+    Soporta_AudioBidireccional,
+    Soporta_PtzMovimiento,
+    Soporta_PtzZoom,
+    Soporta_PtzEnfoque,
+    Soporta_PtzIris,
+    Soporta_PtzEscobilla,
+    Soporta_PtzEnfoqueAuxiliar,
+    Soporta_PtzInicializacionObjetivo,
+    Soporta_PtzCalibracionZoom
 )
 VALUES
     (
-        N'Camara PTZ',
-        N'DS2DF8C842IXG1ELWY',
+        N'Cámara PTZ',
+        N'DS-2DF8C842IXG1-ELWY',
         1,
         N'192.168.50.25',
         N'camara_1',
         2,
         N'admin',
         N'Viinsoft+1',
-        1,
         0,
         1,
         1,
         1,
         1,
-        1
+        1,
+        0,
+        0,
+        0
     ),
     (
-        N'Camara Bala',
-        N'DS2CD3687G3TLIZSU',
+        N'Cámara Bala',
+        N'DS-2CD3687G3T-LIZSU',
         1,
         N'192.168.50.26',
         N'camara_2',
@@ -99,121 +106,69 @@ VALUES
         1,
         1,
         1,
+        0,
         1,
-        1
+        1,
+        0
     ),
     (
-        N'Camara 360',
-        N'DS2CD6365G1IVS',
+        N'Cámara Ojo de Pez',
+        N'DS-2CD6365G1-IVS',
         1,
         N'192.168.50.27',
         N'camara_3',
         3,
         N'admin',
         N'Viinsoft+1',
-        1,
         0,
-        1,
-        1,
-        1,
-        1,
-        1
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
     ),
     (
-        N'Camara Radar',
-        N'iDSTCM403GIR',
+        N'Cámara Radar',
+        N'iDS-TCM403-GIR',
         1,
         N'192.168.50.28',
         N'camara_4',
         1,
         N'admin',
         N'Viinsoft+1',
-        1,
         0,
         1,
         1,
         1,
         1,
+        0,
+        1,
+        1,
         1
     ),
     (
-        N'Camara 180',
-        N'DS2CD3T87G3PLISUYSL',
+        N'Cámara 180 grados',
+        N'DS-2CD3T87G3P-LIHSUY/SL',
         1,
         N'192.168.50.29',
         N'camara_5',
         2,
         N'admin',
         N'Viinsoft+1',
+        1,
         0,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
     );
 GO
-
--- SP: Obtener todas las camaras activas
-CREATE OR ALTER PROCEDURE sp_Camaras_ObtenerTodas
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SELECT
-        IdInterno,
-        Nombre,
-        Modelo,
-        Activo,
-        IP,
-        Go2Rtc,
-        Digest_Usuario,
-        Digest_Contrasena,
-        Soporta_PTZ,
-        SoportaAudioBidireccional,
-        EventoSmart_DeteccionIntrusiones,
-        EventoSmart_DeteccionCruceLinea,
-        EventoSmart_DeteccionEntradaArea,
-        EventoSmart_DeteccionSalidaArea,
-        EventoSmart_EventoCombinado
-    FROM Camaras
-    WHERE Activo = 1
-    ORDER BY FechaCreacion DESC;
-END;
-GO
-
--- SP: Buscar una unica camara por IdInterno exacto
-CREATE OR ALTER PROCEDURE sp_Camaras_BuscarPorIdInterno
-    @IdInterno BIGINT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SELECT TOP 1
-        IdInterno,
-        Nombre,
-        Modelo,
-        Activo,
-        IP,
-        Go2Rtc,
-        Digest_Usuario,
-        Digest_Contrasena,
-        Soporta_PTZ,
-        SoportaAudioBidireccional,
-        EventoSmart_DeteccionIntrusiones,
-        EventoSmart_DeteccionCruceLinea,
-        EventoSmart_DeteccionEntradaArea,
-        EventoSmart_DeteccionSalidaArea,
-        EventoSmart_EventoCombinado
-    FROM Camaras
-    WHERE IdInterno = @IdInterno
-      AND Activo = 1;
-END;
-GO
-
-
-
 
 --ALERTAS DESCONOCIDAS LOG--------------------------------------------------------------//
 CREATE TABLE dbo.AlarmasDesconocidasLog (

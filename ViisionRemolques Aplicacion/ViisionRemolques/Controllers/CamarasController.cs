@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ViisionRemolques.Entities;
 using ViisionRemolques.Repositories;
 using ViisionRemolques.Services.ISAPI;
-using static ViisionRemolques.Services.ISAPI.InterseccionesService;
 
 namespace ViisionRemolques.Controllers
 {
@@ -11,32 +9,9 @@ namespace ViisionRemolques.Controllers
     public class CamarasController : ControllerBase
     {
         private readonly CamaraRepository _camaraRepository;
-        private readonly InterseccionesService _interseccionesService;
-        public CamarasController(CamaraRepository camaraRepository, InterseccionesService interseccionesService) {
+        public CamarasController(CamaraRepository camaraRepository) {
 
             _camaraRepository = camaraRepository;
-            _interseccionesService = interseccionesService;
-        }
-
-        [HttpGet]
-        [Route("/test/id")]
-        public async Task<IActionResult> Test(CancellationToken ct, long idInterno = 3) {
-
-            // 1. Obtener la cámara desde el repositorio
-            var camara = await _camaraRepository.ObtenerPorIdInternoAsync(idInterno);
-
-            if (camara == null || string.IsNullOrWhiteSpace(camara.Go2Rtc))
-            {
-                return NotFound(new { message = $"No se encontró la cámara o el identificador go2rtc para el idInterno: {idInterno}" });
-            }
-           
-
-            return Ok(await _interseccionesService.ObtenerInterseccionAsync(camara, new InterseccionInformacionRequest 
-            {
-                Entrada = "A",
-                Fecha = DateTime.Now,
-                TipoReporte = "daily"
-            }, ct));
         }
 
         [HttpGet]
@@ -50,22 +25,21 @@ namespace ViisionRemolques.Controllers
                 c.Nombre,
                 c.Modelo,
                 c.Activo,
-                caracteristicas = new 
+                Funcionalidades = new 
                 {
-                    c.SoportaPtz,
-                    c.SoportaAudioBidireccional,
-                },
-                alarmas = new 
-                {
-                    EventoSmart = new
+                    AudioBidireccional = c.Soporta_AudioBidireccional,
+                    PTZ = new
                     {
-                        DeteccionIntrusiones = c.EventoSmartDeteccionIntrusiones,
-                        DeteccionCruceLinea = c.EventoSmartDeteccionCruceLinea,
-                        DeteccionEntradaArea=c.EventoSmartDeteccionEntradaArea,
-                        DeteccionSalidaArea=c.EventoSmartDeteccionSalidaArea,
-                        EventoCombinado=c.EventoSmartEventoCombinado
-                    },
-                },
+                        Movimiento = c.Soporta_PtzMovimiento,
+                        Zoom = c.Soporta_PtzZoom,
+                        Enfoque = c.Soporta_PtzEnfoque,
+                        Iris = c.Soporta_PtzIris,
+                        Escobilla = c.Soporta_PtzEscobilla,
+                        EnfoqueAuxiliar = c.Soporta_PtzEnfoqueAuxiliar,
+                        InicializacionObjetivo = c.Soporta_PtzInicializacionObjetivo,
+                        CalibracionZoom = c.Soporta_PtzCalibracionZoom
+                    }
+                }
             }));
         }
     }

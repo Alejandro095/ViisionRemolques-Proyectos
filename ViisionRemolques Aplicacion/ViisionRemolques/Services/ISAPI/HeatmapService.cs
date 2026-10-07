@@ -1,8 +1,7 @@
 ﻿using RestSharp;
 using System.Xml.Linq;
-using System.Xml.Serialization;
-using ViisionRemolques.Entities;
 using ViisionRemolques.Parsing;
+using ViisionRemolques.Repositories;
 using ViisionRemolques.Utils;
 
 namespace ViisionRemolques.Services.ISAPI
@@ -22,7 +21,7 @@ namespace ViisionRemolques.Services.ISAPI
         public readonly string[] tiposModelosEstadisticosValidos = ["duration", "PDC"];
 
         public async Task<HeatmapInformacion> ObtenerHeatmap(
-            Camara camara, 
+            CamaraEntity camara, 
             HeatmapInformacionRequest heatmapInformacionRequest, 
             CancellationToken ct = default)
         {
@@ -132,7 +131,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
         }
 
-        public async Task<bool?> ValidarHeatmapActivoAsync(Camara camara, CancellationToken ct = default)
+        public async Task<bool?> ValidarHeatmapActivoAsync(CamaraEntity camara, CancellationToken ct = default)
         {
             try
             {
@@ -160,7 +159,7 @@ namespace ViisionRemolques.Services.ISAPI
         }
 
         public async Task<HeatmapMinMaxResponse?> ObtenerMinMaxHeatmapAsync(
-        Camara camara,
+        CamaraEntity camara,
         HeatmapDataInformacionRequest heatmapDataInformacionRequest,
         CancellationToken ct = default)
         {
@@ -219,7 +218,7 @@ namespace ViisionRemolques.Services.ISAPI
         }
 
         public async Task<byte[]?> ObtenerImagenHeatmapAsync(
-        Camara camara,
+        CamaraEntity camara,
         HeatmapDataInformacionRequest heatMapDataInformacionRequest,
         CancellationToken ct = default)
         {

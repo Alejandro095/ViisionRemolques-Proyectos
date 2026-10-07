@@ -1,12 +1,8 @@
 ﻿using RestSharp;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Xml.Linq;
-using System.Xml.Serialization;
-using ViisionRemolques.Entities;
-using ViisionRemolques.Parsing;
+using ViisionRemolques.Repositories;
 using ViisionRemolques.Utils;
-using static ViisionRemolques.Services.ISAPI.HeatmapService;
 
 namespace ViisionRemolques.Services.ISAPI
 {
@@ -24,7 +20,7 @@ namespace ViisionRemolques.Services.ISAPI
         public readonly string[] tiposReportesValidos = ["daily", "weekly", "monthly", "yearly"];
 
         public async Task<object?> ObtenerInterseccionAsync(
-            Camara camara,
+            CamaraEntity camara,
             InterseccionInformacionRequest interseccionInformacionRequest, 
             CancellationToken ct = default)
         {
@@ -106,7 +102,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
         }
 
-        public async Task<List<FlujoInterseccion>?> ObtenerFlujosInterseccionAsync(Camara camara, FlujosInterseccionRequest flujosInterseccionRequest, CancellationToken ct = default)
+        public async Task<List<FlujoInterseccion>?> ObtenerFlujosInterseccionAsync(CamaraEntity camara, FlujosInterseccionRequest flujosInterseccionRequest, CancellationToken ct = default)
         {
             try
             {
@@ -153,7 +149,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
         }
 
-        public async Task<InterseccionConfiguracion?> ObtenerConfiguracionAsync(Camara camara, CancellationToken ct = default)
+        public async Task<InterseccionConfiguracion?> ObtenerConfiguracionAsync(CamaraEntity camara, CancellationToken ct = default)
         {
             try
             {

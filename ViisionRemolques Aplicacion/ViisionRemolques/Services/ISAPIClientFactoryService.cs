@@ -1,13 +1,13 @@
 ﻿using RestSharp;
 using RestSharp.Authenticators.Digest;
-using ViisionRemolques.Entities;
+using ViisionRemolques.Repositories;
 
 namespace ViisionRemolques.Services
 {
     public class ISAPIClientFactoryService
     {
 
-        public RestClient Crear(Camara camara)
+        public RestClient Crear(CamaraEntity camara)
         {
             if (string.IsNullOrWhiteSpace(camara.IP))
                 throw new InvalidOperationException($"La cámara '{camara.Nombre}' no tiene asignada una IP.");

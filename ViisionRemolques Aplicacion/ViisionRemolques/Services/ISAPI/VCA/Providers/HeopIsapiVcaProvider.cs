@@ -1,7 +1,7 @@
 ﻿using RestSharp;
 using System.Xml.Linq;
-using ViisionRemolques.Entities;
 using ViisionRemolques.Enums;
+using ViisionRemolques.Repositories;
 using ViisionRemolques.Utils;
 
 namespace ViisionRemolques.Services.ISAPI.VCA.Providers
@@ -28,7 +28,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
             _isapiClientFactoryService = isapiClientFactoryService;
         }
 
-        public async Task<Resultado<IEnumerable<VCAModoEnum>>> ObtenerModosSoportados(Camara camara, CancellationToken ct)
+        public async Task<Resultado<IEnumerable<VCAModoEnum>>> ObtenerModosSoportados(CamaraEntity camara, CancellationToken ct)
         {
             var apps = await ObtenerAppsAsync(camara, ct);
             if (!apps.Exito) return Resultado<IEnumerable<VCAModoEnum>>.Fallo(apps.Error!);
@@ -40,7 +40,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
             return Resultado<IEnumerable<VCAModoEnum>>.Ok(modos);
         }
 
-        public async Task<Resultado> CambiarModo(Camara camara, VCAModoEnum vcaModo, CancellationToken ct)
+        public async Task<Resultado> CambiarModo(CamaraEntity camara, VCAModoEnum vcaModo, CancellationToken ct)
         {
             if (!AppIdPorModo.TryGetValue(vcaModo, out var appIdDestino))
                 return Resultado.Fallo("El VCA no ha sido registrado en el catalogo de modos.");
@@ -66,7 +66,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
             return await SetRunStatusAsync(camara, target.Id, true, ct);
         }
 
-        public async Task<Resultado<VCAModoEnum>> ObtenerModoActual(Camara camara, CancellationToken ct)
+        public async Task<Resultado<VCAModoEnum>> ObtenerModoActual(CamaraEntity camara, CancellationToken ct)
         {
             var apps = await ObtenerAppsAsync(camara, ct);
 
@@ -84,7 +84,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
             return Resultado<VCAModoEnum>.Ok(modo);
         }
 
-        private async Task<Resultado> SetRunStatusAsync(Camara camara, int appListId, bool runStatus, CancellationToken ct)
+        private async Task<Resultado> SetRunStatusAsync(CamaraEntity camara, int appListId, bool runStatus, CancellationToken ct)
         {
             try
             {
@@ -108,7 +108,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
 
         private record AppInfo(int Id, int AppId, bool RunStatus);
 
-        private async Task<Resultado<List<AppInfo>>> ObtenerAppsAsync(Camara camara, CancellationToken ct)
+        private async Task<Resultado<List<AppInfo>>> ObtenerAppsAsync(CamaraEntity camara, CancellationToken ct)
         {
             try
             {

@@ -1,5 +1,5 @@
-﻿using ViisionRemolques.Entities;
-using ViisionRemolques.Enums;
+﻿using ViisionRemolques.Enums;
+using ViisionRemolques.Repositories;
 using ViisionRemolques.Services.ISAPI.VCA.Providers;
 
 namespace ViisionRemolques.Services.ISAPI.VCA
@@ -15,7 +15,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA
             _heopIsapiVcaProvider = heopIsapiVcaProvider;
         }
 
-        public IVcaProvider? Resolver(Camara camara) => camara.PlataformaVCA switch
+        public IVcaProvider? Resolver(CamaraEntity camara) => camara.PlataformaVCA switch
         {
             PlataformaVcaEnum.NA => null,
             PlataformaVcaEnum.Legacy => _legacyIsapiVcaProvider,

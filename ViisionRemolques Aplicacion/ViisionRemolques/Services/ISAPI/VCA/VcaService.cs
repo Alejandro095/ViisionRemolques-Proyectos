@@ -1,6 +1,6 @@
 ﻿using RestSharp;
-using ViisionRemolques.Entities;
 using ViisionRemolques.Enums;
+using ViisionRemolques.Repositories;
 using ViisionRemolques.Utils;
 
 namespace ViisionRemolques.Services.ISAPI.VCA
@@ -16,7 +16,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA
             _isapiClientFactoryService = isapiClientFactoryService;
         }
 
-        public async Task<Resultado<IEnumerable<VCAModoEnum>>> ObtenerModosSoportadosAsync(Camara camara, CancellationToken ct)
+        public async Task<Resultado<IEnumerable<VCAModoEnum>>> ObtenerModosSoportadosAsync(CamaraEntity camara, CancellationToken ct)
         {
             var provider = _vcaProviderResolver.Resolver(camara);
             if (provider is null)
@@ -25,7 +25,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA
             return await provider.ObtenerModosSoportados(camara, ct);
         }
 
-        public async Task<Resultado<VCAModoEnum>> ObtenerModoActualAsync(Camara camara, CancellationToken ct)
+        public async Task<Resultado<VCAModoEnum>> ObtenerModoActualAsync(CamaraEntity camara, CancellationToken ct)
         {
             var provider = _vcaProviderResolver.Resolver(camara);
             if (provider is null)
@@ -34,7 +34,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA
             return await provider.ObtenerModoActual(camara, ct);
         }
 
-        public async Task<Resultado> CambiarModoAsync(Camara camara, VCAModoEnum nuevoModo, CancellationToken ct)
+        public async Task<Resultado> CambiarModoAsync(CamaraEntity camara, VCAModoEnum nuevoModo, CancellationToken ct)
         {
             var provider = _vcaProviderResolver.Resolver(camara);
 
@@ -57,7 +57,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA
             return await ReiniciarCamara(camara, ct);
         }
 
-        public async Task<Resultado> ReiniciarCamara(Camara camara, CancellationToken ct)
+        public async Task<Resultado> ReiniciarCamara(CamaraEntity camara, CancellationToken ct)
         {
             try
             {

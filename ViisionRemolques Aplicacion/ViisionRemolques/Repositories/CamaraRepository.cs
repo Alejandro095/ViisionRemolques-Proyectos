@@ -1,7 +1,7 @@
 ﻿using Dapper;
 using System.Data;
 using System.Data.Common;
-using ViisionRemolques.Entities;
+using ViisionRemolques.Enums;
 
 namespace ViisionRemolques.Repositories
 {
@@ -14,7 +14,7 @@ namespace ViisionRemolques.Repositories
             _dbConnection = dbConnection;
         }
 
-        public async Task<IEnumerable<Camara>> ObtenerTodasAsync()
+        public async Task<IEnumerable<CamaraEntity>> ObtenerTodasAsync()
         {
             const string sql = @"
                 SELECT
@@ -27,21 +27,23 @@ namespace ViisionRemolques.Repositories
                     PlataformaVCA,
                     Digest_Usuario,
                     Digest_Contrasena,
-                    Soporta_PTZ,
-                    SoportaAudioBidireccional,
-                    EventoSmart_DeteccionIntrusiones,
-                    EventoSmart_DeteccionCruceLinea,
-                    EventoSmart_DeteccionEntradaArea,
-                    EventoSmart_DeteccionSalidaArea,
-                    EventoSmart_EventoCombinado
+                    Soporta_AudioBidireccional,
+                    Soporta_PtzMovimiento,
+                    Soporta_PtzZoom,
+                    Soporta_PtzEnfoque,
+                    Soporta_PtzIris,
+                    Soporta_PtzEscobilla,
+                    Soporta_PtzEnfoqueAuxiliar,
+                    Soporta_PtzInicializacionObjetivo,
+                    Soporta_PtzCalibracionZoom
                 FROM Camaras
                 WHERE Activo = 1
                 ORDER BY FechaCreacion DESC;";
 
-            return await _dbConnection.QueryAsync<Camara>(sql);
+            return await _dbConnection.QueryAsync<CamaraEntity>(sql);
         }
 
-        public async Task<Camara?> ObtenerPorIdInternoAsync(long idInterno)
+        public async Task<CamaraEntity?> ObtenerPorIdInternoAsync(long idInterno)
         {
             const string sql = @"
                 SELECT TOP 1
@@ -54,18 +56,47 @@ namespace ViisionRemolques.Repositories
                     PlataformaVCA,
                     Digest_Usuario,
                     Digest_Contrasena,
-                    Soporta_PTZ,
-                    SoportaAudioBidireccional,
-                    EventoSmart_DeteccionIntrusiones,
-                    EventoSmart_DeteccionCruceLinea,
-                    EventoSmart_DeteccionEntradaArea,
-                    EventoSmart_DeteccionSalidaArea,
-                    EventoSmart_EventoCombinado
+                    Soporta_AudioBidireccional,
+                    Soporta_PtzMovimiento,
+                    Soporta_PtzZoom,
+                    Soporta_PtzEnfoque,
+                    Soporta_PtzIris,
+                    Soporta_PtzEscobilla,
+                    Soporta_PtzEnfoqueAuxiliar,
+                    Soporta_PtzInicializacionObjetivo,
+                    Soporta_PtzCalibracionZoom
                 FROM Camaras
                 WHERE IdInterno = @IdInterno
                   AND Activo = 1;";
 
-            return await _dbConnection.QueryFirstOrDefaultAsync<Camara>(sql, new { IdInterno = idInterno });
+            return await _dbConnection.QueryFirstOrDefaultAsync<CamaraEntity>(sql, new { IdInterno = idInterno });
         }
+    }
+
+    public class CamaraEntity
+    {
+        public long IdInterno { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Modelo { get; set; } = string.Empty;
+        public PlataformaVcaEnum PlataformaVCA { get; set; }
+        public string Go2Rtc { get; set; } = string.Empty;
+        public bool Activo { get; set; }
+        public string? IP { get; set; }
+
+        // Digest
+        public string? DigestUsuario { get; set; }
+        public string? DigestContrasena { get; set; }
+
+        // Funcionalidaes
+        public bool Soporta_AudioBidireccional { get; set; }
+
+        public bool Soporta_PtzMovimiento { get; set; }
+        public bool Soporta_PtzZoom { get; set; }
+        public bool Soporta_PtzEnfoque { get; set; }
+        public bool Soporta_PtzIris { get; set; }
+        public bool Soporta_PtzEscobilla { get; set; }
+        public bool Soporta_PtzEnfoqueAuxiliar { get; set; }
+        public bool Soporta_PtzInicializacionObjetivo { get; set; }
+        public bool Soporta_PtzCalibracionZoom { get; set; }
     }
 }

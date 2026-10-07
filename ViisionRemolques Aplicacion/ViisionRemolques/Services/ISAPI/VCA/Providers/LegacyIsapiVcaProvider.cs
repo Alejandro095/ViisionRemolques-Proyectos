@@ -1,8 +1,8 @@
 ﻿using RestSharp;
 using System.Net.NetworkInformation;
 using System.Xml.Linq;
-using ViisionRemolques.Entities;
 using ViisionRemolques.Enums;
+using ViisionRemolques.Repositories;
 using ViisionRemolques.Utils;
 
 namespace ViisionRemolques.Services.ISAPI.VCA.Providers
@@ -30,7 +30,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
         private static readonly Dictionary<string, VCAModoEnum> ModoPorType =
            TypePorModo.ToDictionary(kv => kv.Value, kv => kv.Key, StringComparer.OrdinalIgnoreCase);
 
-        public async Task<Resultado<IEnumerable<VCAModoEnum>>> ObtenerModosSoportados(Camara camara, CancellationToken ct)
+        public async Task<Resultado<IEnumerable<VCAModoEnum>>> ObtenerModosSoportados(CamaraEntity camara, CancellationToken ct)
         {
             try
             {
@@ -65,7 +65,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
             }
         }
 
-        async Task<Resultado> IVcaProvider.CambiarModo(Camara camara, VCAModoEnum modo, CancellationToken ct)
+        async Task<Resultado> IVcaProvider.CambiarModo(CamaraEntity camara, VCAModoEnum modo, CancellationToken ct)
         {
             try
             {
@@ -99,7 +99,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
             }
         }
 
-        async Task<Resultado<VCAModoEnum>> IVcaProvider.ObtenerModoActual(Camara camara, CancellationToken ct)
+        async Task<Resultado<VCAModoEnum>> IVcaProvider.ObtenerModoActual(CamaraEntity camara, CancellationToken ct)
         {
             try
             {

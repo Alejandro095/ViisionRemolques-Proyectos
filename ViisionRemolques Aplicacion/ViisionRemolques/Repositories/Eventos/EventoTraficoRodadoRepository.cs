@@ -1,8 +1,5 @@
 ﻿using Dapper;
-using System.Data;
 using System.Data.Common;
-using ViisionRemolques.Entities;
-using ViisionRemolques.Parsing.Extractors;
 using ViisionRemolques.Parsing.Models;
 
 namespace ViisionRemolques.Repositories.Eventos

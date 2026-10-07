@@ -1,18 +1,9 @@
 ﻿using Hangfire;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Net.Http.Headers;
-using System.Diagnostics;
-using System.Net;
-using System.Net.Http.Headers;
-using ViisionRemolques.Entities;
 using ViisionRemolques.Enums;
 using ViisionRemolques.Jobs;
 using ViisionRemolques.Parsing;
-using ViisionRemolques.Parsing.Extractors;
 using ViisionRemolques.Parsing.Models;
-using ViisionRemolques.Repositories;
 using ViisionRemolques.Repositories.Eventos;
 using ViisionRemolques.Services;
 
