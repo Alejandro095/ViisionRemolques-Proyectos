@@ -16,19 +16,56 @@ namespace ViisionRemolques.Repositories
 
         public async Task<IEnumerable<Camara>> ObtenerTodasAsync()
         {
-            return await _dbConnection.QueryAsync<Camara>(
-                "sp_Camaras_ObtenerTodas",
-                commandType: CommandType.StoredProcedure
-            );
+            const string sql = @"
+                SELECT
+                    IdInterno,
+                    Nombre,
+                    Modelo,
+                    Activo,
+                    IP,
+                    Go2Rtc,
+                    PlataformaVCA,
+                    Digest_Usuario,
+                    Digest_Contrasena,
+                    Soporta_PTZ,
+                    SoportaAudioBidireccional,
+                    EventoSmart_DeteccionIntrusiones,
+                    EventoSmart_DeteccionCruceLinea,
+                    EventoSmart_DeteccionEntradaArea,
+                    EventoSmart_DeteccionSalidaArea,
+                    EventoSmart_EventoCombinado
+                FROM Camaras
+                WHERE Activo = 1
+                ORDER BY FechaCreacion DESC;";
+
+            return await _dbConnection.QueryAsync<Camara>(sql);
         }
 
         public async Task<Camara?> ObtenerPorIdInternoAsync(long idInterno)
         {
-            return await _dbConnection.QueryFirstOrDefaultAsync<Camara>(
-                "sp_Camaras_BuscarPorIdInterno",
-                new { IdInterno = idInterno },
-                commandType: CommandType.StoredProcedure
-            );
+            const string sql = @"
+                SELECT TOP 1
+                    IdInterno,
+                    Nombre,
+                    Modelo,
+                    Activo,
+                    IP,
+                    Go2Rtc,
+                    PlataformaVCA,
+                    Digest_Usuario,
+                    Digest_Contrasena,
+                    Soporta_PTZ,
+                    SoportaAudioBidireccional,
+                    EventoSmart_DeteccionIntrusiones,
+                    EventoSmart_DeteccionCruceLinea,
+                    EventoSmart_DeteccionEntradaArea,
+                    EventoSmart_DeteccionSalidaArea,
+                    EventoSmart_EventoCombinado
+                FROM Camaras
+                WHERE IdInterno = @IdInterno
+                  AND Activo = 1;";
+
+            return await _dbConnection.QueryFirstOrDefaultAsync<Camara>(sql, new { IdInterno = idInterno });
         }
     }
 }

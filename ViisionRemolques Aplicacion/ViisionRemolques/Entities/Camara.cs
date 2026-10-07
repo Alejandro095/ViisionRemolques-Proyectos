@@ -1,10 +1,13 @@
-﻿namespace ViisionRemolques.Entities
+﻿using ViisionRemolques.Enums;
+
+namespace ViisionRemolques.Entities
 {
     public class Camara
     {
         public long IdInterno { get; set; }
         public string Nombre { get; set; } = string.Empty;
         public string Modelo { get; set; } = string.Empty;
+        public PlataformaVcaEnum PlataformaVCA { get; set; }
         public string Go2Rtc { get; set; } = string.Empty;
         public bool Activo { get; set; }
         public string? IP { get; set; }

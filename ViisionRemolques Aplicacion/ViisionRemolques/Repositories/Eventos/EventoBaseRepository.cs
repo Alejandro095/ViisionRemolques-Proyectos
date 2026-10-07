@@ -42,7 +42,7 @@ namespace ViisionRemolques.Repositories.Eventos
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS BIGINT);";
 
-            var vca = eventoBaseExtractorModelo.VCAModo.Val();
+            var vca = eventoBaseExtractorModelo.VCAModo.Info().Titulo;
 
             return await _dbConnection.ExecuteScalarAsync<long>(sql, new
             {

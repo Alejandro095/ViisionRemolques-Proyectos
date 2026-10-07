@@ -2,6 +2,7 @@
 using ViisionRemolques.Enums;
 using ViisionRemolques.Repositories;
 using ViisionRemolques.Services.ISAPI;
+using ViisionRemolques.Services.ISAPI.VCA;
 
 namespace ViisionRemolques.Controllers
 {
@@ -10,11 +11,11 @@ namespace ViisionRemolques.Controllers
     public class VCAController : ControllerBase
     {
         private readonly CamaraRepository _camaraRepository;
-        private readonly VCAService _vcaService;
-        public VCAController(CamaraRepository camaraRepository, VCAService VCAService)
+        private readonly VcaService _vcaService;
+        public VCAController(CamaraRepository camaraRepository, VcaService vcaService)
         {
             _camaraRepository = camaraRepository;
-            _vcaService = VCAService;
+            _vcaService = vcaService;
         }
 
         [HttpGet]
@@ -29,41 +30,30 @@ namespace ViisionRemolques.Controllers
                 title: "Recurso no encontrado"
             );
 
-            if (camara.Modelo == ModeloCamaraEnum.HikvisionRadar.ObtenerCodigoModelo())
-            {
+            var resultado = await _vcaService.ObtenerModoActualAsync(camara, ct);
+
+            if (!resultado.Exito)
                 return Problem(
-                    title: "Operación no soportada",
-                    detail: $"El modelo de cámara '{camara.Modelo}' no es compatible con esta operación.",
+                    title: "Error",
+                    detail: resultado.Error,
                     statusCode: StatusCodes.Status400BadRequest
                 );
-            }
-
-            string vcaActual = await _vcaService.ObtenerModoActualAsync(camara, ct);
 
             return Ok(new
             {
-                vca = vcaActual
+                vca = resultado.Valor.Info().Titulo
             });
         }
 
 
 
         [HttpPut]
-        [Route("modo")]
+        [Route("modo/{vca}")]
         public async Task<IActionResult> CambiarModo(
             long idInterno,
-            [FromQuery] string vca,
+            string vca,
             CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(vca))
-            {
-                return Problem(
-                    title: "Petición inválida",
-                    detail: "El parámetro de consulta 'vca' es requerido y no puede estar vacío.",
-                    statusCode: StatusCodes.Status400BadRequest
-                );
-            }
-
             var camara = await _camaraRepository.ObtenerPorIdInternoAsync(idInterno);
 
             if (camara is null) return Problem(
@@ -72,26 +62,59 @@ namespace ViisionRemolques.Controllers
                 title: "Recurso no encontrado"
             );
 
-            if (camara.Modelo == ModeloCamaraEnum.HikvisionRadar.ObtenerCodigoModelo())
+
+            if (!VCAModoCatalogo.TryParseTitulo(vca, out var modo))
             {
                 return Problem(
-                    title: "Operación no soportada",
-                    detail: $"El modelo de cámara '{camara.Modelo}' no es compatible con esta operación.",
+                    detail: $"'{vca}' no es un modo VCA válido.",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Parámetro inválido"
+                );
+            }                
+
+            var resultado = await _vcaService.CambiarModoAsync(camara, modo, ct);
+
+            if (!resultado.Exito)
+                return Problem(
+                    title: "Error",
+                    detail: resultado.Error,
                     statusCode: StatusCodes.Status400BadRequest
                 );
-            }
-
-            // Cambiar modo VCA y reiniciar la cámara
-            await _vcaService.CambiarModoAsync(camara, vca, reiniciarAlFinalizar: true, ct);
 
             return Ok(new
             {
-                mensaje = $"Modo VCA actualizado exitosamente a '{vca}'. La cámara se está reiniciando y estará disponible en unos momentos.",
-                vcaNuevo = vca,
-                reiniciando = true
+                mensaje = $"El modo VCA ha sido actualizado correctamente a '{vca}'. El dispositivo se encuentra en proceso de reinicio y reanudará su operación en unos momentos.",
+                vca = vca,
             });
         }
 
+        private record ModosVCA(string Id, string Titulo);
 
+        [HttpGet]
+        [Route("modos")]
+        public async Task<IActionResult> ObtenerModosSoportador(
+            long idInterno,
+            CancellationToken ct)
+        {
+            var camara = await _camaraRepository.ObtenerPorIdInternoAsync(idInterno);
+
+            if (camara is null) return Problem(
+                detail: $"No se encontró ninguna cámara con el id '{idInterno}'.",
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Recurso no encontrado"
+            );
+
+            var resultado = await _vcaService.ObtenerModosSoportadosAsync(camara, ct);
+
+            if (!resultado.Exito)
+                return Problem(
+                    title: "Error",
+                    detail: resultado.Error,
+                    statusCode: StatusCodes.Status400BadRequest
+                );
+
+            return Ok(resultado.Valor!.Select(modo => 
+                new ModosVCA(modo.Info().Titulo, modo.Info().Descripcion)));
+        }
     }
 }

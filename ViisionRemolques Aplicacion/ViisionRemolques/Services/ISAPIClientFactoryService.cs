@@ -19,7 +19,7 @@ namespace ViisionRemolques.Services
 
             var options = new RestClientOptions(baseUrl)
             {
-                Timeout = TimeSpan.FromSeconds(15),
+                Timeout = TimeSpan.FromSeconds(120),
                 Authenticator = new DigestAuthenticator(camara.DigestUsuario, camara.DigestContrasena)
             };
             return new RestClient(options);

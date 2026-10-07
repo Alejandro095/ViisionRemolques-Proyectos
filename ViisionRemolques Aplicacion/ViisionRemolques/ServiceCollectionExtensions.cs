@@ -7,6 +7,8 @@ using ViisionRemolques.Repositories;
 using ViisionRemolques.Repositories.Eventos;
 using ViisionRemolques.Services;
 using ViisionRemolques.Services.ISAPI;
+using ViisionRemolques.Services.ISAPI.VCA;
+using ViisionRemolques.Services.ISAPI.VCA.Providers;
 
 namespace ViisionRemolques
 {
@@ -37,7 +39,15 @@ namespace ViisionRemolques
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             services.AddScoped<ISAPIClientFactoryService>();
-            services.AddTransient<VCAService>();
+
+            services.AddTransient<LegacyIsapiVcaProvider>();
+            services.AddTransient<HeopIsapiVcaProvider>();
+            services.AddTransient<VcaProviderResolver>();
+            services.AddTransient<VcaService>();
+
+            //services.AddTransient<VCAService>();
+
+
             services.AddTransient<HeatmapService>();
             services.AddTransient<InterseccionesService>();
 

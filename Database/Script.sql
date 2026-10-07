@@ -29,6 +29,8 @@ CREATE TABLE Camaras (
     IP                                  NVARCHAR(45)  NULL,
     Go2Rtc                              NVARCHAR(100) NOT NULL,
 
+    PlataformaVCA                       TINYINT NOT NULL,
+
     -- Digest
     Digest_Usuario                      NVARCHAR(100) NULL,
     Digest_Contrasena                   NVARCHAR(256) NULL,
@@ -54,6 +56,7 @@ INSERT INTO Camaras (
     Activo,
     IP,
     Go2Rtc,
+    PlataformaVCA,
     Digest_Usuario,
     Digest_Contrasena,
     Soporta_PTZ,
@@ -71,6 +74,7 @@ VALUES
         1,
         N'192.168.50.25',
         N'camara_1',
+        2,
         N'admin',
         N'Viinsoft+1',
         1,
@@ -87,6 +91,7 @@ VALUES
         1,
         N'192.168.50.26',
         N'camara_2',
+        3,
         N'admin',
         N'Viinsoft+1',
         1,
@@ -103,6 +108,7 @@ VALUES
         1,
         N'192.168.50.27',
         N'camara_3',
+        3,
         N'admin',
         N'Viinsoft+1',
         1,
@@ -119,6 +125,7 @@ VALUES
         1,
         N'192.168.50.28',
         N'camara_4',
+        1,
         N'admin',
         N'Viinsoft+1',
         1,
@@ -135,6 +142,7 @@ VALUES
         1,
         N'192.168.50.29',
         N'camara_5',
+        2,
         N'admin',
         N'Viinsoft+1',
         0,
@@ -218,47 +226,6 @@ CREATE TABLE dbo.AlarmasDesconocidasLog (
     Fecha         DATETIME2(2) NOT NULL DEFAULT GETDATE()
 );
 GO
-
--- Índices recomendados para búsquedas rápidas por fecha e IP
-CREATE INDEX IX_AlarmasNoDetectadas_Fecha ON dbo.AlarmasDesconocidasLog(Fecha DESC);
-CREATE INDEX IX_AlarmasNoDetectadas_IPCamara ON dbo.AlarmasDesconocidasLog(IPCamara);
-GO
-
--- SP para registrar alarmas no detectadas
-CREATE OR ALTER PROCEDURE dbo.sp_AlarmasDesconocidasLog_Insertar
-    @IPCamara          VARCHAR(45) = NULL,
-    @ContentType       VARCHAR(100) = NULL,
-    @Evento            VARCHAR(100) = NULL,
-    @Body              NVARCHAR(MAX),
-    @Motivo            NVARCHAR(250)
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    INSERT INTO dbo.AlarmasDesconocidasLog (
-        IPCamara,
-        ContentType,
-        Evento,
-        Body,
-        Motivo,
-        Fecha
-    )
-    VALUES (
-        @IPCamara,
-        @ContentType,
-        @Evento,
-        @Body,
-        @Motivo,
-        SYSDATETIME()
-    );
-END;
-GO
-
-
-
-
-
-
 
 -----------------------------------------------------------------------------------
 ---- EVENTOS
@@ -502,4 +469,5 @@ GO
 
 CREATE NONCLUSTERED INDEX IX_Imagenes_EventoIdInterno
 ON Imagenes (EventoIdInterno);
+
 GO
