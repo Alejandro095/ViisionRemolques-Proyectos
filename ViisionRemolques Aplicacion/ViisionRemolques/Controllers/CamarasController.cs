@@ -2,6 +2,7 @@
 using ViisionRemolques.Entities;
 using ViisionRemolques.Repositories;
 using ViisionRemolques.Services.ISAPI;
+using static ViisionRemolques.Services.ISAPI.InterseccionesService;
 
 namespace ViisionRemolques.Controllers
 {
@@ -10,16 +11,16 @@ namespace ViisionRemolques.Controllers
     public class CamarasController : ControllerBase
     {
         private readonly CamaraRepository _camaraRepository;
-        private readonly HeatmapService _heatmapService;
-        public CamarasController(CamaraRepository camaraRepository, HeatmapService heatmap) {
+        private readonly InterseccionesService _interseccionesService;
+        public CamarasController(CamaraRepository camaraRepository, InterseccionesService interseccionesService) {
 
             _camaraRepository = camaraRepository;
-            _heatmapService = heatmap;
+            _interseccionesService = interseccionesService;
         }
 
         [HttpGet]
         [Route("/test/id")]
-        public async Task<IActionResult> Test(long idInterno = 3) {
+        public async Task<IActionResult> Test(CancellationToken ct, long idInterno = 3) {
 
             // 1. Obtener la cámara desde el repositorio
             var camara = await _camaraRepository.ObtenerPorIdInternoAsync(idInterno);
@@ -28,15 +29,14 @@ namespace ViisionRemolques.Controllers
             {
                 return NotFound(new { message = $"No se encontró la cámara o el identificador go2rtc para el idInterno: {idInterno}" });
             }
-            
-            var heatMapInformacion = await _heatmapService.ObtenerHeatmap(camara, new HeatmapService.HeatmapInformacionRequest
-            {
-                TipoReporte = "daily",
-                ModeloEstadistico = "PDC",
-                Fecha = DateTime.Now,
-            });
+           
 
-            return Ok(heatMapInformacion);
+            return Ok(await _interseccionesService.ObtenerInterseccionAsync(camara, new InterseccionInformacionRequest 
+            {
+                Entrada = "A",
+                Fecha = DateTime.Now,
+                TipoReporte = "daily"
+            }, ct));
         }
 
         [HttpGet]

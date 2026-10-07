@@ -61,7 +61,7 @@ namespace ViisionRemolques.Services.ISAPI
                     return heatmap;
                 } else
                 {
-                    heatmap.HeatmapHabilitado = true;
+                    heatmap.Habilitado = true;
                 }
 
                 var (fechaInicio, fechaFinal) = FechasCanonicasUtils.Obtener(heatmap.TipoReporte, heatmap.Fecha);
@@ -257,7 +257,7 @@ namespace ViisionRemolques.Services.ISAPI
             public bool Error { get; set; } = true;
             public string? ErrorMensaje { get; set; }
             public DateTime Fecha { get; set; }
-            public bool HeatmapHabilitado { get; set; } = false;
+            public bool Habilitado { get; set; } = false;
             public string? ImagenPath { get; set; }
             public double Max { get; set; }
             public double Min { get; set; }

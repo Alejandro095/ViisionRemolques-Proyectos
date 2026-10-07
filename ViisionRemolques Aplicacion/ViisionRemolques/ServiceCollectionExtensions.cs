@@ -39,6 +39,8 @@ namespace ViisionRemolques
             services.AddScoped<ISAPIClientFactoryService>();
             services.AddTransient<VCAService>();
             services.AddTransient<HeatmapService>();
+            services.AddTransient<InterseccionesService>();
+
             services.AddTransient<AlmacenamientoImagenesService>();
             services.AddTransient<WebhookPayloadExtractorService>();
 
