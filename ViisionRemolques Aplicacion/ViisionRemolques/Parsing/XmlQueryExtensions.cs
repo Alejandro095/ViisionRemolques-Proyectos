@@ -8,16 +8,6 @@ namespace ViisionRemolques.Parsing
 {
     public static class XmlQueryExtensions
     {
-        //public static IEnumerable<XElement> SeleccionarElementos(this XDocument doc, string xpath)
-        //{
-        //    return doc.XPathSelectElements(xpath);
-        //}
-
-        //public static string? ValorElemento(this XElement element, string xpath)
-        //{
-        //    return element.XPathSelectElement(xpath)?.Value.Trim();
-        //}
-
         public static string? Buscar(this XNode node, params string[] xpaths)
         {
             foreach (var xpath in xpaths)
@@ -32,35 +22,6 @@ namespace ViisionRemolques.Parsing
 
             return null;
         }
-
-        //public static string? Buscar(this XNode doc, params string[] xpaths) =>
-        //   xpaths.Select(xpath => doc.XPathSelectElement(xpath)?.Value.Trim())
-        //         .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
-
-
-        //public static string? Buscar(this XDocument doc, params string[] xpaths) =>
-        //    xpaths.Select(xpath => doc.XPathSelectElement(xpath)?.Value.Trim())
-        //          .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
-
-        //public static string? BuscarInnerXml(this XDocument doc, params string[] xpaths) =>
-        //    xpaths.Select(xpath => doc.XPathSelectElement(xpath)?.ToString().Trim())
-        //          .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
-
-        //public static string? BuscarInnerJson(this XDocument doc, params string[] xpaths)
-        //{
-        //    try
-        //    {
-        //        var xmlString = doc.BuscarInnerXml(xpaths);
-        //        if (string.IsNullOrWhiteSpace(xmlString)) return null;
-
-        //        var node = XElement.Parse(xmlString);
-        //        return JsonConvert.SerializeXNode(node, Formatting.None, omitRootObject: true);
-        //    } catch
-        //    {
-        //        return null;
-        //    }
-        //}
-
 
         public static string? BuscarInnerArrayJson(this XDocument doc, params string[] xpaths)
         {

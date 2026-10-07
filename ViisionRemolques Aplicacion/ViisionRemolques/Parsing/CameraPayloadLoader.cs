@@ -4,31 +4,16 @@ using System.Xml.Linq;
 
 namespace ViisionRemolques.Parsing
 {
-    /// <summary>
-    /// Convierte el cuerpo de una petición —venga en XML o en JSON— a un
-    /// <see cref="XDocument"/> normalizado: sin namespaces y con los nombres de
-    /// elemento en minúsculas, para que las reglas de búsqueda sean las mismas
-    /// sea cual sea el formato que mande la cámara.
-    /// </summary>
     public static class CameraPayloadLoader
     {
         private const string RaizPorDefecto = "eventnotificationalert";
 
-        /// <summary>
-        /// Normaliza el cuerpo recibido.
-        /// </summary>
-        /// <returns>
-        /// El documento normalizado, o <c>null</c> si el cuerpo viene vacío o no se
-        /// puede interpretar. Nunca lanza: un payload ilegible no debe tumbar el webhook.
-        /// </returns>
         public static XDocument? ToNormalizedXml(string? cuerpo)
         {
             if (string.IsNullOrWhiteSpace(cuerpo)) return null;
 
             var texto = cuerpo.TrimStart('﻿', ' ', '\t', '\r', '\n');
 
-            // El formato lo decide el contenido, no la cabecera Content-Type:
-            // estas cámaras la declaran mal con frecuencia.
             var doc = EsJson(texto) ? CargarJson(texto) : CargarXml(texto);
 
             if (doc is null) return null;
@@ -101,8 +86,6 @@ namespace ViisionRemolques.Parsing
                 case JsonValueKind.Object:
                     foreach (var prop in json.EnumerateObject())
                     {
-                        // Un array se aplana a elementos hermanos repetidos, que es como
-                        // XML representa las listas y lo que esperan las reglas de búsqueda.
                         if (prop.Value.ValueKind == JsonValueKind.Array)
                             foreach (var item in prop.Value.EnumerateArray())
                                 el.Add(ConvertirElemento(item, prop.Name));
@@ -131,14 +114,11 @@ namespace ViisionRemolques.Parsing
                 case JsonValueKind.False:
                     el.Value = "false";
                     break;
-
-                    // Null y Undefined quedan como elemento vacío.
             }
 
             return el;
         }
-
-        /// <summary>Una clave JSON puede no ser un nombre de elemento XML válido.</summary>
+        
         private static string NombreValido(string clave)
         {
             var limpio = new string(clave
