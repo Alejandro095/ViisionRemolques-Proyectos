@@ -8,164 +8,139 @@ namespace ViisionRemolques.Services.ISAPI
 {
     public class HeatmapService
     {
-        private readonly ISAPIClientFactoryService _clientFactory;
+        private readonly ISAPIClientFactoryService _isapiClientFactoryService;
         private readonly AlmacenamientoImagenesService _almacenamientoImagenesService;
+
         public HeatmapService(
-            ISAPIClientFactoryService ISAPIClientFactoryService, 
-            AlmacenamientoImagenesService almacenamientoImagenesService) {
-            _clientFactory = ISAPIClientFactoryService;
+            ISAPIClientFactoryService isapiClientFactoryService,
+            AlmacenamientoImagenesService almacenamientoImagenesService)
+        {
+            _isapiClientFactoryService = isapiClientFactoryService;
             _almacenamientoImagenesService = almacenamientoImagenesService;
         }
 
         public readonly string[] tiposReportesValidos = ["daily", "weekly", "monthly", "yearly"];
         public readonly string[] tiposModelosEstadisticosValidos = ["duration", "PDC"];
 
-        public async Task<HeatmapInformacion> ObtenerHeatmap(
-            CamaraEntity camara, 
-            HeatmapInformacionRequest heatmapInformacionRequest, 
+        public async Task<Resultado<HeatmapInformacion>> ObtenerHeatmap(
+            CamaraEntity camara,
+            HeatmapInformacionRequest request,
             CancellationToken ct = default)
         {
-            var heatmap = new HeatmapInformacion
-            {
-                Fecha = heatmapInformacionRequest.Fecha ?? DateTime.Now,
-                TipoReporte = heatmapInformacionRequest.TipoReporte,
-                ModeloEstadistico = heatmapInformacionRequest.ModeloEstadistico,
-            };
-
             try
             {
-                if (heatmap.TipoReporte is null || !tiposReportesValidos.Contains(heatmap.TipoReporte))
+                if (request.TipoReporte is null || !tiposReportesValidos.Contains(request.TipoReporte))
                 {
-                    heatmap.Error = true;
-                    heatmap.ErrorMensaje = $"Tipo de reporte inválido ({string.Join(", ", tiposReportesValidos)})";
-
-                    return heatmap;
+                    return Resultado<HeatmapInformacion>.Fallo($"Tipo de reporte inválido ({string.Join(", ", tiposReportesValidos)})");
                 }
 
-                var heatmapHabilitado = await ValidarHeatmapActivoAsync(camara, ct);
-
-                if (heatmapHabilitado is null)
+                if (request.ModeloEstadistico is null || !tiposModelosEstadisticosValidos.Contains(request.ModeloEstadistico))
                 {
-                    heatmap.Error = true;
-                    heatmap.ErrorMensaje = $"No fue posible consultar el estado del servicio Heatmap para la cámara ({camara?.IP ?? "IP no especificada"}).";
-
-                    return heatmap;
+                    return Resultado<HeatmapInformacion>.Fallo($"Modelo estadístico inválido ({string.Join(", ", tiposModelosEstadisticosValidos)})");
                 }
 
-                if (heatmapHabilitado is false)
-                {
-                    heatmap.Error = true;
-                    heatmap.ErrorMensaje = $"La funcionalidad Heatmap se encuentra deshabilitada en la cámara ({camara?.IP ?? "IP no especificada"}).";
+                var heatmapHabilitadoResultado = await ValidarHeatmapActivoAsync(camara, ct);
 
-                    return heatmap;
-                } else
+                if (!heatmapHabilitadoResultado.Exito)
                 {
-                    heatmap.Habilitado = true;
+                    return Resultado<HeatmapInformacion>.Fallo(heatmapHabilitadoResultado.Error ?? $"No fue posible consultar el estado del servicio Heatmap para la cámara ({camara?.IP ?? "IP no especificada"}).");
                 }
 
-                var (fechaInicio, fechaFinal) = FechasCanonicasUtils.Obtener(heatmap.TipoReporte, heatmap.Fecha);
-
-                if (heatmap.ModeloEstadistico is null || !tiposModelosEstadisticosValidos.Contains(heatmap.ModeloEstadistico))
+                if (!heatmapHabilitadoResultado.Valor)
                 {
-                    heatmap.Error = true;
-                    heatmap.ErrorMensaje = $"Modelo estadístico inválido ({string.Join(", ", tiposModelosEstadisticosValidos)})";
-
-                    return heatmap;
+                    return Resultado<HeatmapInformacion>.Fallo($"La funcionalidad Heatmap se encuentra deshabilitada en la cámara ({camara?.IP ?? "IP no especificada"}).");
                 }
 
-                var heatmapDataInformacionRequest = new HeatmapDataInformacionRequest
+                var fechaObjetivo = request.Fecha ?? DateTime.Now;
+                var (fechaInicio, fechaFinal) = FechasCanonicasUtils.Obtener(request.TipoReporte, fechaObjetivo);
+
+                var dataRequest = new HeatmapDataInformacionRequest
                 {
-                    TipoReporte = heatmap.TipoReporte,
-                    ModeloEstadistico = heatmap.ModeloEstadistico,
+                    TipoReporte = request.TipoReporte,
+                    ModeloEstadistico = request.ModeloEstadistico,
                     FechaInicio = fechaInicio,
                     FechaFinal = fechaFinal,
                 };
 
-                var minmax = await ObtenerMinMaxHeatmapAsync(camara, heatmapDataInformacionRequest, ct);
+                var minMaxResultado = await ObtenerMinMaxHeatmapAsync(camara, dataRequest, ct);
 
-                if (minmax is null)
+                if (!minMaxResultado.Exito)
                 {
-                    heatmap.Error = true;
-                    heatmap.ErrorMensaje = $"Error al consultar los parámetros Min/Max del heatmap ({camara?.IP ?? "IP no especificada"})";
-
-                    return heatmap;
+                    return Resultado<HeatmapInformacion>.Fallo(minMaxResultado.Error ?? $"Error al consultar los parámetros Min/Max del heatmap ({camara?.IP ?? "IP no especificada"})");
                 }
 
-                heatmap.Min = minmax.Min;
-                heatmap.Max = minmax.Max;
+                var imagenResultado = await ObtenerImagenHeatmapAsync(camara, dataRequest, ct);
 
-                var imagenBytes = await ObtenerImagenHeatmapAsync(camara, heatmapDataInformacionRequest, ct);
-
-                if (imagenBytes is null)
+                if (!imagenResultado.Exito)
                 {
-                    heatmap.Error = true;
-                    heatmap.ErrorMensaje = $"Error al descargar el heatmap ({camara?.IP ?? "IP no especificada"})";
-
-                    return heatmap;
+                    return Resultado<HeatmapInformacion>.Fallo(imagenResultado.Error ?? $"Error al descargar el heatmap ({camara?.IP ?? "IP no especificada"})");
                 }
 
                 var imagenPath = await _almacenamientoImagenesService.Guardar(new List<byte[]>
                 {
-                    imagenBytes
+                    imagenResultado.Valor!
                 }, cancellationToken: ct);
 
                 if (imagenPath is null || imagenPath.Count == 0)
                 {
-                    heatmap.Error = true;
-                    heatmap.ErrorMensaje = $"Error al guardar la imagen el heatmap ({camara?.IP ?? "IP no especificada"})";
-
-                    return heatmap;
+                    return Resultado<HeatmapInformacion>.Fallo($"Error al guardar la imagen del heatmap ({camara?.IP ?? "IP no especificada"})");
                 }
 
-                heatmap.ImagenPath = imagenPath[0];
-                heatmap.Error = false;
+                return Resultado<HeatmapInformacion>.Ok(new HeatmapInformacion
+                {
+                    Fecha = fechaObjetivo,
+                    TipoReporte = request.TipoReporte,
+                    ModeloEstadistico = request.ModeloEstadistico,
+                    Habilitado = true,
+                    Min = minMaxResultado.Valor!.Min,
+                    Max = minMaxResultado.Valor!.Max,
+                    ImagenPath = imagenPath[0]
+                });
 
-                return heatmap;
-
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
-                heatmap.Error = true;
-                heatmap.ErrorMensaje = $"Excepcion: {ex.Message}";
-
-                return heatmap;
+                return Resultado<HeatmapInformacion>.Fallo($"Excepción no controlada: {ex.Message}");
             }
         }
 
-        public async Task<bool?> ValidarHeatmapActivoAsync(CamaraEntity camara, CancellationToken ct = default)
+        public async Task<Resultado<bool>> ValidarHeatmapActivoAsync(CamaraEntity camara, CancellationToken ct = default)
         {
             try
             {
-                using var client = _clientFactory.Crear(camara);
-
+                using var client = _isapiClientFactoryService.Crear(camara);
                 var request = new RestRequest("/ISAPI/System/Video/inputs/channels/1/heatMap", Method.Get);
-
                 var response = await client.ExecuteAsync(request, ct);
 
                 if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
                 {
-                    return null;
+                    return Resultado<bool>.Fallo($"Respuesta HTTP inválida o vacía al consultar estado de heatmap ({response.StatusCode}).");
                 }
 
                 XDocument doc = XDocument.Parse(response.Content);
-
                 string? value = doc.Buscar("//*[local-name()='enabled']");
 
-                return bool.TryParse(value, out bool result) && result;
+                if (bool.TryParse(value, out bool result))
+                {
+                    return Resultado<bool>.Ok(result);
+                }
+
+                return Resultado<bool>.Fallo("No se pudo analizar el nodo 'enabled' de la respuesta XML.");
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                return Resultado<bool>.Fallo($"Error de red o parseo al validar estado: {ex.Message}");
             }
         }
 
-        public async Task<HeatmapMinMaxResponse?> ObtenerMinMaxHeatmapAsync(
-        CamaraEntity camara,
-        HeatmapDataInformacionRequest heatmapDataInformacionRequest,
-        CancellationToken ct = default)
+        public async Task<Resultado<HeatmapMinMaxResponse>> ObtenerMinMaxHeatmapAsync(
+            CamaraEntity camara,
+            HeatmapDataInformacionRequest heatmapDataInformacionRequest,
+            CancellationToken ct = default)
         {
             try
             {
-                using var client = _clientFactory.Crear(camara);
+                using var client = _isapiClientFactoryService.Crear(camara);
 
                 var request = new RestRequest($"/ISAPI/System/Video/inputs/channels/1/heatMap/pictureInfo", Method.Post);
 
@@ -190,10 +165,9 @@ namespace ViisionRemolques.Services.ISAPI
 
                 if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
                 {
-                    return null;
+                    return Resultado<HeatmapMinMaxResponse>.Fallo($"Respuesta HTTP inválida o vacía al consultar valores Min/Max ({response.StatusCode}).");
                 }
 
-                // Parsear respuesta
                 XDocument doc = XDocument.Parse(response.Content);
 
                 string? maxStr = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "MaxValue")?.Value;
@@ -202,29 +176,29 @@ namespace ViisionRemolques.Services.ISAPI
                 if (double.TryParse(maxStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double max) &&
                     double.TryParse(minStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double min))
                 {
-                    return new HeatmapMinMaxResponse
+                    return Resultado<HeatmapMinMaxResponse>.Ok(new HeatmapMinMaxResponse
                     {
                         Min = min,
                         Max = max
-                    };
+                    });
                 }
 
-                return null;
+                return Resultado<HeatmapMinMaxResponse>.Fallo("Los nodos MinValue o MaxValue no se encontraron o tenían un formato numérico incorrecto.");
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                return Resultado<HeatmapMinMaxResponse>.Fallo($"Error de red o parseo al obtener Min/Max: {ex.Message}");
             }
         }
 
-        public async Task<byte[]?> ObtenerImagenHeatmapAsync(
-        CamaraEntity camara,
-        HeatmapDataInformacionRequest heatMapDataInformacionRequest,
-        CancellationToken ct = default)
+        public async Task<Resultado<byte[]>> ObtenerImagenHeatmapAsync(
+            CamaraEntity camara,
+            HeatmapDataInformacionRequest heatMapDataInformacionRequest,
+            CancellationToken ct = default)
         {
             try
             {
-                using var client = _clientFactory.Crear(camara);
+                using var client = _isapiClientFactoryService.Crear(camara);
 
                 var fechaInicio = heatMapDataInformacionRequest.FechaInicio.ToString("s");
                 var fechaFinal = heatMapDataInformacionRequest.FechaFinal.ToString("s");
@@ -235,26 +209,29 @@ namespace ViisionRemolques.Services.ISAPI
 
                 if (!response.IsSuccessful)
                 {
-                    return null;
+                    return Resultado<byte[]>.Fallo($"Error HTTP al descargar la imagen ({response.StatusCode}).");
                 }
 
                 if (response.ContentType != null && response.ContentType.Contains("xml", StringComparison.OrdinalIgnoreCase))
                 {
-                    return null;
+                    return Resultado<byte[]>.Fallo("La cámara retornó un documento XML (posible error) en lugar de una imagen binaria.");
                 }
 
-                return response.RawBytes;
+                if (response.RawBytes == null || response.RawBytes.Length == 0)
+                {
+                    return Resultado<byte[]>.Fallo("La cámara no retornó datos binarios para la imagen.");
+                }
+
+                return Resultado<byte[]>.Ok(response.RawBytes);
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                return Resultado<byte[]>.Fallo($"Excepción al obtener la imagen del heatmap: {ex.Message}");
             }
         }
 
         public class HeatmapInformacion
         {
-            public bool Error { get; set; } = true;
-            public string? ErrorMensaje { get; set; }
             public DateTime Fecha { get; set; }
             public bool Habilitado { get; set; } = false;
             public string? ImagenPath { get; set; }

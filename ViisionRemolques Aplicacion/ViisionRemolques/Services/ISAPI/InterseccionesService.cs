@@ -8,105 +8,97 @@ namespace ViisionRemolques.Services.ISAPI
 {
     public class InterseccionesService
     {
-        private readonly ISAPIClientFactoryService _clientFactory;
+        private readonly ISAPIClientFactoryService _isapiClientFactoryService;
         private readonly AlmacenamientoImagenesService _almacenamientoImagenesService;
+
         public InterseccionesService(
-            ISAPIClientFactoryService ISAPIClientFactoryService, 
-            AlmacenamientoImagenesService almacenamientoImagenesService) {
-            _clientFactory = ISAPIClientFactoryService;
+            ISAPIClientFactoryService ISAPIClientFactoryService,
+            AlmacenamientoImagenesService almacenamientoImagenesService)
+        {
+            _isapiClientFactoryService = ISAPIClientFactoryService;
             _almacenamientoImagenesService = almacenamientoImagenesService;
         }
 
         public readonly string[] tiposReportesValidos = ["daily", "weekly", "monthly", "yearly"];
 
-        public async Task<object?> ObtenerInterseccionAsync(
+        public async Task<Resultado<InterseccionInformacion>> ObtenerInterseccionAsync(
             CamaraEntity camara,
-            InterseccionInformacionRequest interseccionInformacionRequest, 
+            InterseccionInformacionRequest request,
             CancellationToken ct = default)
         {
-            var interseccion = new InterseccionInformacion
-            {
-                Fecha = interseccionInformacionRequest.Fecha ?? DateTime.Now,
-                TipoReporte = interseccionInformacionRequest.TipoReporte,
-                Entrada = interseccionInformacionRequest.Entrada,
-            };
-
             try
             {
-                if (interseccion.TipoReporte is null || !tiposReportesValidos.Contains(interseccion.TipoReporte))
+                if (request.TipoReporte is null || !tiposReportesValidos.Contains(request.TipoReporte))
                 {
-                    interseccion.Error = true;
-                    interseccion.ErrorMensaje = $"Tipo de reporte inválido ({string.Join(", ", tiposReportesValidos)})";
-
-                    return interseccion;
+                    return Resultado<InterseccionInformacion>.Fallo($"Tipo de reporte inválido ({string.Join(", ", tiposReportesValidos)})");
                 }
 
-                var interseccionConfiguracion = await ObtenerConfiguracionAsync(camara, ct);
+                var configuracionResultado = await ObtenerConfiguracionAsync(camara, ct);
 
-                if (interseccionConfiguracion is null || interseccionConfiguracion.Accesos.Count == 0)
+                if (!configuracionResultado.Exito)
                 {
-                    interseccion.Error = true;
-                    interseccion.ErrorMensaje = $"No fue posible consultar el estado del servicio Intersecciones para la cámara ({camara?.IP ?? "IP no especificada"}).";
+                    return Resultado<InterseccionInformacion>.Fallo(configuracionResultado.Error ?? $"No fue posible consultar el estado del servicio Intersecciones para la cámara ({camara?.IP ?? "IP no especificada"}).");
+                }
 
-                    return interseccion;
+                var interseccionConfiguracion = configuracionResultado.Valor!;
+
+                if (interseccionConfiguracion.Accesos.Count == 0)
+                {
+                    return Resultado<InterseccionInformacion>.Fallo($"La cámara ({camara?.IP ?? "IP no especificada"}) no tiene accesos configurados para intersecciones.");
                 }
 
                 if (interseccionConfiguracion.Habilitado is false)
                 {
-                    interseccion.Error = true;
-                    interseccion.ErrorMensaje = $"La funcionalidad Heatmap se encuentra deshabilitada en la cámara ({camara?.IP ?? "IP no especificada"}).";
-
-                    return interseccion;
-                }
-                else
-                {
-                    interseccion.Habilitado = true;
+                    return Resultado<InterseccionInformacion>.Fallo($"La funcionalidad Intersecciones se encuentra deshabilitada en la cámara ({camara?.IP ?? "IP no especificada"}).");
                 }
 
-                if (interseccion.Entrada is not null && !interseccionConfiguracion.Accesos.Contains(interseccion.Entrada))
+                if (request.Entrada is not null && !interseccionConfiguracion.Accesos.Contains(request.Entrada))
                 {
-                    interseccion.Error = true;
-                    interseccion.ErrorMensaje = $"El valor de la entrada es invalido, solo es posible: {string.Join(", ", interseccionConfiguracion.Accesos)}.";
-
-                    return interseccion;
+                    return Resultado<InterseccionInformacion>.Fallo($"El valor de la entrada es inválido, solo es posible: {string.Join(", ", interseccionConfiguracion.Accesos)}.");
                 }
 
-                var (fechaInicio, fechaFinal) = FechasCanonicasUtils.Obtener(interseccion.TipoReporte, interseccion.Fecha);
+                var fechaObjetivo = request.Fecha ?? DateTime.Now;
+                var (fechaInicio, fechaFinal) = FechasCanonicasUtils.Obtener(request.TipoReporte, fechaObjetivo);
 
-                var flujosInterseccionResponse = await ObtenerFlujosInterseccionAsync(camara, new FlujosInterseccionRequest
+                var flujosRequest = new FlujosInterseccionRequest
                 {
-                    Entrada = interseccion.Entrada,
-                    TipoReporte = interseccion.TipoReporte,
+                    Entrada = request.Entrada,
+                    TipoReporte = request.TipoReporte,
                     FechaInicio = fechaInicio,
                     FechaFinal = fechaFinal,
                     Accesos = interseccionConfiguracion.Accesos
-                }, ct);
+                };
 
-                if (flujosInterseccionResponse is null || flujosInterseccionResponse.Count == 0)
+                var flujosResultado = await ObtenerFlujosInterseccionAsync(camara, flujosRequest, ct);
+
+                if (!flujosResultado.Exito)
                 {
-                    interseccion.Error = true;
-                    interseccion.ErrorMensaje = $"No se han podido obtener los flujos en la camara {camara?.IP ?? "IP no especificada"}";
+                    return Resultado<InterseccionInformacion>.Fallo(flujosResultado.Error ?? $"No se han podido obtener los flujos en la cámara {camara?.IP ?? "IP no especificada"}");
                 }
 
-                interseccion.Intersecciones = flujosInterseccionResponse;
-                interseccion.Error = false;
-
-                return interseccion;
+                return Resultado<InterseccionInformacion>.Ok(new InterseccionInformacion
+                {
+                    Fecha = fechaObjetivo,
+                    TipoReporte = request.TipoReporte,
+                    Entrada = request.Entrada,
+                    Habilitado = true,
+                    Intersecciones = flujosResultado.Valor!
+                });
             }
             catch (Exception ex)
             {
-                interseccion.Error = true;
-                interseccion.ErrorMensaje = $"Excepcion: {ex.Message}";
-
-                return interseccion;
+                return Resultado<InterseccionInformacion>.Fallo($"Excepción no controlada: {ex.Message}");
             }
         }
 
-        public async Task<List<FlujoInterseccion>?> ObtenerFlujosInterseccionAsync(CamaraEntity camara, FlujosInterseccionRequest flujosInterseccionRequest, CancellationToken ct = default)
+        public async Task<Resultado<List<FlujoInterseccion>>> ObtenerFlujosInterseccionAsync(
+            CamaraEntity camara,
+            FlujosInterseccionRequest flujosInterseccionRequest,
+            CancellationToken ct = default)
         {
             try
             {
-                using var client = _clientFactory.Crear(camara);
+                using var client = _isapiClientFactoryService.Crear(camara);
 
                 var request = new RestRequest("/ISAPI/Intelligent/channels/1/intersectionAnalysis/search?format=json", Method.Post);
                 request.AddHeader("Content-Type", "application/json");
@@ -126,14 +118,17 @@ namespace ViisionRemolques.Services.ISAPI
 
                 if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
                 {
-                    return null;
+                    return Resultado<List<FlujoInterseccion>>.Fallo($"Error HTTP al buscar flujos de intersección ({response.StatusCode}).");
                 }
 
                 var data = JsonSerializer.Deserialize<InterseccionSearchResponse>(response.Content);
 
-                if (data?.Data is null) return null;
+                if (data?.Data is null)
+                {
+                    return Resultado<List<FlujoInterseccion>>.Ok(new List<FlujoInterseccion>());
+                }
 
-                return data.Data
+                var resultados = data.Data
                     .Where(f => f.EndID is not null && flujosInterseccionRequest.Accesos.Contains(f.EndID))
                     .Select(f => new FlujoInterseccion
                     {
@@ -142,18 +137,22 @@ namespace ViisionRemolques.Services.ISAPI
                         Personas = f.PDC
                     })
                     .ToList();
+
+                return Resultado<List<FlujoInterseccion>>.Ok(resultados);
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                return Resultado<List<FlujoInterseccion>>.Fallo($"Error al obtener flujos de intersección: {ex.Message}");
             }
         }
 
-        public async Task<InterseccionConfiguracion?> ObtenerConfiguracionAsync(CamaraEntity camara, CancellationToken ct = default)
+        public async Task<Resultado<InterseccionConfiguracion>> ObtenerConfiguracionAsync(
+            CamaraEntity camara,
+            CancellationToken ct = default)
         {
             try
             {
-                using var client = _clientFactory.Crear(camara);
+                using var client = _isapiClientFactoryService.Crear(camara);
 
                 var request = new RestRequest("/ISAPI/Intelligent/channels/1/intersectionAnalysis?format=json", Method.Get);
 
@@ -161,27 +160,32 @@ namespace ViisionRemolques.Services.ISAPI
 
                 if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
                 {
-                    return null;
+                    return Resultado<InterseccionConfiguracion>.Fallo($"Error HTTP al obtener configuración de intersección ({response.StatusCode}).");
                 }
-                var data = JsonSerializer.Deserialize<IntersectionResponse>(response.Content);
 
+                var data = JsonSerializer.Deserialize<IntersectionResponse>(response.Content);
                 var analysis = data?.IntersectionAnalysis;
 
-                if (analysis is null) return null;
+                if (analysis is null)
+                {
+                    return Resultado<InterseccionConfiguracion>.Fallo("El JSON de configuración de intersección no tiene el formato esperado o está vacío.");
+                }
 
-                return new InterseccionConfiguracion
+                var config = new InterseccionConfiguracion
                 {
                     Habilitado = analysis.Enabled,
                     Accesos = analysis.TagID?
                         .Select(t => t.ID)
                         .OfType<string>()
                         .Select(id => id.ToUpperInvariant())
-                        .ToList() ?? new()
+                        .ToList() ?? new List<string>()
                 };
+
+                return Resultado<InterseccionConfiguracion>.Ok(config);
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                return Resultado<InterseccionConfiguracion>.Fallo($"Error al parsear o solicitar la configuración de intersección: {ex.Message}");
             }
         }
 
@@ -191,7 +195,7 @@ namespace ViisionRemolques.Services.ISAPI
             public DateTime FechaFinal { get; set; }
             public string? TipoReporte { get; set; }
             public string? Entrada { get; set; }
-            public List<string> Accesos = new List<string>();
+            public List<string> Accesos { get; set; } = new List<string>();
         }
 
         public class InterseccionInformacionRequest
@@ -200,6 +204,7 @@ namespace ViisionRemolques.Services.ISAPI
             public string? TipoReporte { get; set; }
             public string? Entrada { get; set; }
         }
+
         public class FlujoInterseccion
         {
             public string? Origen { get; set; }
@@ -209,13 +214,11 @@ namespace ViisionRemolques.Services.ISAPI
 
         public class InterseccionInformacion
         {
-            public bool Error { get; set; } = true;
-            public string? ErrorMensaje { get; set; }
             public DateTime Fecha { get; set; }
             public bool Habilitado { get; set; } = false;
             public string? TipoReporte { get; set; }
             public string? Entrada { get; set; }
-            public List<FlujoInterseccion> Intersecciones  { get; set; }
+            public List<FlujoInterseccion> Intersecciones { get; set; } = new List<FlujoInterseccion>();
         }
 
         public class InterseccionConfiguracion
