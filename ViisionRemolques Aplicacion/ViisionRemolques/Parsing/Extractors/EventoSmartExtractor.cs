@@ -53,17 +53,17 @@ namespace ViisionRemolques.Parsing.Extractors
 
     public static class EventoSmartEnum
     {
-        public static readonly string Intruciones = "fielddetection";
-        public static readonly string SalidaRegion = "regionexiting";
-        public static readonly string EntradaRegion = "regionentrance";
-        public static readonly string CruceLinea = "linedetection";
-        public static readonly string Merodeo = "loitering";
-        public static readonly string Estacionamiento = "parking";
-        public static readonly string MovimientoRapido = "rapidMove";
-        public static readonly string PersonasReunidas = "group";
-        public static readonly string EquipajeDesatendido = "unattendedBaggage";
-        public static readonly string ObjectoRemovido = "attendedBaggage";
-        public static readonly string VideoMotionDetection = "VMD";
+        public const string Intruciones = "fielddetection";
+        public const string SalidaRegion = "regionexiting";
+        public const string EntradaRegion = "regionentrance";
+        public const string CruceLinea = "linedetection";
+        public const string Merodeo = "loitering";
+        public const string Estacionamiento = "parking";
+        public const string MovimientoRapido = "rapidMove";
+        public const string PersonasReunidas = "group";
+        public const string EquipajeDesatendido = "unattendedBaggage";
+        public const string ObjectoRemovido = "attendedBaggage";
+        public const string VideoMotionDetection = "VMD";
     }
 
 }

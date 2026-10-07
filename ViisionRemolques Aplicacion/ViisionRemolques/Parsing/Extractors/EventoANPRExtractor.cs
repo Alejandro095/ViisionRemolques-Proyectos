@@ -58,6 +58,6 @@ namespace ViisionRemolques.Parsing.Extractors
 
     public static class EventoANPREnum
     {
-        public static readonly string ANPR = "ANPR";
+        public const string ANPR = "ANPR";
     }
 }

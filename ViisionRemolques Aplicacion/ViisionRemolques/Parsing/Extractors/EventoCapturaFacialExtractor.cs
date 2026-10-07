@@ -32,6 +32,6 @@ namespace ViisionRemolques.Parsing.Extractors
 
     public static class EventoCapturaFacialEnum
     {
-        public static readonly string CapturaFacial = "faceCapture";
+        public const string CapturaFacial = "faceCapture";
     }
 }

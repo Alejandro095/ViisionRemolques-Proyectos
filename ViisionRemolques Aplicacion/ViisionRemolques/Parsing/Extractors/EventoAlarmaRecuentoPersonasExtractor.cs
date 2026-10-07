@@ -131,22 +131,19 @@ namespace ViisionRemolques.Parsing.Extractors
 
     public static class EventoAlarmaRecuentoPersonasEnum
     {
-        public static readonly string PersonDensityDetection = "personDensityDetection";
-        public static readonly string PersonQueueTime = "personQueueTime";
-        public static readonly string PersonQueueCounting = "personQueueCounting";
-        
-
-
-        public static readonly string PersonQueueRealTime = "personQueueRealTime";
-        public static readonly string PersonQueueTimingStatistics = "personQueueTimingStatistics";
+        public const string PersonDensityDetection = "personDensityDetection";
+        public const string PersonQueueTime = "personQueueTime";
+        public const string PersonQueueCounting = "personQueueCounting";
+        public const string PersonQueueRealTime = "personQueueRealTime";
+        public const string PersonQueueTimingStatistics = "personQueueTimingStatistics";
     }
 
     public static class EventoAlarmaRecuentoPersonasAlgoritmosEnum
     {
-        public static readonly string DSA = "DSA";
-        public static readonly string PQA = "PQA";
-        public static readonly string PDC = "PDC";
-        public static readonly string Trigger = "trigger";
-        public static readonly string Timing = "timing";
+        public const string DSA = "DSA";
+        public const string PQA = "PQA";
+        public const string PDC = "PDC";
+        public const string Trigger = "trigger";
+        public const string Timing = "timing";
     }
 }

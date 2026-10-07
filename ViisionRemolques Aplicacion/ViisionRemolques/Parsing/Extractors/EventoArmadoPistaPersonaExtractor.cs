@@ -86,6 +86,6 @@ namespace ViisionRemolques.Parsing.Extractors
 
     public static class EventoArmadoPistaPersonaEnum
     {
-        public static readonly string ArmadoPistaPersona = "personArmingTrack";
+        public const string ArmadoPistaPersona = "personArmingTrack";
     }
 }

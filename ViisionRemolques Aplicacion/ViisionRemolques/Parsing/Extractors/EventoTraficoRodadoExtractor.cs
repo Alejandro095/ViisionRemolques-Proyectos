@@ -100,7 +100,7 @@ namespace ViisionRemolques.Parsing.Extractors
 
     public static class EventoTraficoRodadoEnum
     {
-        public static readonly string TPSRealTime = "TPSRealTime";
-        public static readonly string TPS = "TPS";
+        public const string TPSRealTime = "TPSRealTime";
+        public const string TPS = "TPS";
     }
 }

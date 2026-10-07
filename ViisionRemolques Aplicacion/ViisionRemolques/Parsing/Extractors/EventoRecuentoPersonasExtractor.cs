@@ -76,6 +76,6 @@ namespace ViisionRemolques.Parsing.Extractors
 
     public static class EventoRecuentoPersonasEnum
     {
-        public static readonly string RecuentoPersonas = "peoplecounting";
+        public const string RecuentoPersonas = "peoplecounting";
     }
 }

@@ -123,13 +123,13 @@ namespace ViisionRemolques.Parsing.Extractors
 
     public static class EventoDeteccionTipoMultiobjetivoTiposEnum
     {
-        public static readonly string Ninguno = "";
-        public static readonly string Humano = "Humano";
-        public static readonly string Vehiculo = "Vehiculo";
+        public const string Ninguno = "";
+        public const string Humano = "Humano";
+        public const string Vehiculo = "Vehiculo";
     }
 
     public static class EventoDeteccionTipoMultiobjetivoEnum
     {
-        public static readonly string MixedTargetDetection = "mixedTargetDetection";
+        public const string MixedTargetDetection = "mixedTargetDetection";
     }
 }
