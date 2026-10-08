@@ -88,7 +88,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<HeatmapInformacion>.Fallo($"Excepción no controlada: {ex.Message}");
+                return Resultado<HeatmapInformacion>.Fallo($"Excepción: {ex.Message}");
             }
         }
 
@@ -113,7 +113,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<bool>.Fallo($"Error de red o parseo al validar estado: {ex.Message}");
+                return Resultado<bool>.Fallo($"Excepción: {ex.Message}");
             }
         }
 
@@ -169,7 +169,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<HeatmapMinMaxResponse>.Fallo($"Error de red o parseo al obtener Min/Max: {ex.Message}");
+                return Resultado<HeatmapMinMaxResponse>.Fallo($"Excepción: {ex.Message}");
             }
         }
 
@@ -202,7 +202,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<byte[]>.Fallo($"Excepción al obtener la imagen del heatmap: {ex.Message}");
+                return Resultado<byte[]>.Fallo($"Excepción: {ex.Message}");
             }
         }
 

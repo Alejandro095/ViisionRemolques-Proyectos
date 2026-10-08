@@ -75,7 +75,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<InterseccionInformacion>.Fallo($"Excepción no controlada: {ex.Message}");
+                return Resultado<InterseccionInformacion>.Fallo($"Excepción: {ex.Message}");
             }
         }
 
@@ -126,7 +126,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<List<FlujoInterseccion>>.Fallo($"Error al obtener flujos de intersección: {ex.Message}");
+                return Resultado<List<FlujoInterseccion>>.Fallo($"Excepción: {ex.Message}");
             }
         }
 
@@ -165,7 +165,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<InterseccionConfiguracion>.Fallo($"Error al parsear o solicitar la configuración de intersección: {ex.Message}");
+                return Resultado<InterseccionConfiguracion>.Fallo($"Excepción: {ex.Message}");
             }
         }
 
