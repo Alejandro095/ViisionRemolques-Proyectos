@@ -29,33 +29,23 @@ namespace ViisionRemolques.Services.ISAPI
             try
             {
                 if (request.TipoReporte is null || !tiposReportesValidos.Contains(request.TipoReporte))
-                {
                     return Resultado<InterseccionInformacion>.Fallo($"Tipo de reporte inválido ({string.Join(", ", tiposReportesValidos)})");
-                }
 
                 var configuracionResultado = await ObtenerConfiguracionAsync(camara, ct);
 
                 if (!configuracionResultado.Exito)
-                {
                     return Resultado<InterseccionInformacion>.Fallo(configuracionResultado.Error ?? $"No fue posible consultar el estado del servicio Intersecciones para la cámara ({camara?.IP ?? "IP no especificada"}).");
-                }
 
                 var interseccionConfiguracion = configuracionResultado.Valor!;
 
                 if (interseccionConfiguracion.Accesos.Count == 0)
-                {
                     return Resultado<InterseccionInformacion>.Fallo($"La cámara ({camara?.IP ?? "IP no especificada"}) no tiene accesos configurados para intersecciones.");
-                }
 
                 if (interseccionConfiguracion.Habilitado is false)
-                {
                     return Resultado<InterseccionInformacion>.Fallo($"La funcionalidad Intersecciones se encuentra deshabilitada en la cámara ({camara?.IP ?? "IP no especificada"}).");
-                }
 
                 if (request.Entrada is not null && !interseccionConfiguracion.Accesos.Contains(request.Entrada))
-                {
                     return Resultado<InterseccionInformacion>.Fallo($"El valor de la entrada es inválido, solo es posible: {string.Join(", ", interseccionConfiguracion.Accesos)}.");
-                }
 
                 var fechaObjetivo = request.Fecha ?? DateTime.Now;
                 var (fechaInicio, fechaFinal) = FechasCanonicasUtils.Obtener(request.TipoReporte, fechaObjetivo);
@@ -72,9 +62,7 @@ namespace ViisionRemolques.Services.ISAPI
                 var flujosResultado = await ObtenerFlujosInterseccionAsync(camara, flujosRequest, ct);
 
                 if (!flujosResultado.Exito)
-                {
                     return Resultado<InterseccionInformacion>.Fallo(flujosResultado.Error ?? $"No se han podido obtener los flujos en la cámara {camara?.IP ?? "IP no especificada"}");
-                }
 
                 return Resultado<InterseccionInformacion>.Ok(new InterseccionInformacion
                 {
@@ -117,16 +105,12 @@ namespace ViisionRemolques.Services.ISAPI
                 var response = await client.ExecuteAsync(request, ct);
 
                 if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
-                {
                     return Resultado<List<FlujoInterseccion>>.Fallo($"Error HTTP al buscar flujos de intersección ({response.StatusCode}).");
-                }
 
                 var data = JsonSerializer.Deserialize<InterseccionSearchResponse>(response.Content);
 
                 if (data?.Data is null)
-                {
                     return Resultado<List<FlujoInterseccion>>.Ok(new List<FlujoInterseccion>());
-                }
 
                 var resultados = data.Data
                     .Where(f => f.EndID is not null && flujosInterseccionRequest.Accesos.Contains(f.EndID))
@@ -159,17 +143,13 @@ namespace ViisionRemolques.Services.ISAPI
                 var response = await client.ExecuteAsync(request, ct);
 
                 if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
-                {
                     return Resultado<InterseccionConfiguracion>.Fallo($"Error HTTP al obtener configuración de intersección ({response.StatusCode}).");
-                }
 
                 var data = JsonSerializer.Deserialize<IntersectionResponse>(response.Content);
                 var analysis = data?.IntersectionAnalysis;
 
                 if (analysis is null)
-                {
                     return Resultado<InterseccionConfiguracion>.Fallo("El JSON de configuración de intersección no tiene el formato esperado o está vacío.");
-                }
 
                 var config = new InterseccionConfiguracion
                 {

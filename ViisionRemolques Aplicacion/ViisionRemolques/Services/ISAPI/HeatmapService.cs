@@ -35,21 +35,15 @@ namespace ViisionRemolques.Services.ISAPI
                 }
 
                 if (request.ModeloEstadistico is null || !tiposModelosEstadisticosValidos.Contains(request.ModeloEstadistico))
-                {
                     return Resultado<HeatmapInformacion>.Fallo($"Modelo estadístico inválido ({string.Join(", ", tiposModelosEstadisticosValidos)})");
-                }
 
                 var heatmapHabilitadoResultado = await ValidarHeatmapActivoAsync(camara, ct);
 
                 if (!heatmapHabilitadoResultado.Exito)
-                {
                     return Resultado<HeatmapInformacion>.Fallo(heatmapHabilitadoResultado.Error ?? $"No fue posible consultar el estado del servicio Heatmap para la cámara ({camara?.IP ?? "IP no especificada"}).");
-                }
 
                 if (!heatmapHabilitadoResultado.Valor)
-                {
                     return Resultado<HeatmapInformacion>.Fallo($"La funcionalidad Heatmap se encuentra deshabilitada en la cámara ({camara?.IP ?? "IP no especificada"}).");
-                }
 
                 var fechaObjetivo = request.Fecha ?? DateTime.Now;
                 var (fechaInicio, fechaFinal) = FechasCanonicasUtils.Obtener(request.TipoReporte, fechaObjetivo);
@@ -65,16 +59,12 @@ namespace ViisionRemolques.Services.ISAPI
                 var minMaxResultado = await ObtenerMinMaxHeatmapAsync(camara, dataRequest, ct);
 
                 if (!minMaxResultado.Exito)
-                {
                     return Resultado<HeatmapInformacion>.Fallo(minMaxResultado.Error ?? $"Error al consultar los parámetros Min/Max del heatmap ({camara?.IP ?? "IP no especificada"})");
-                }
 
                 var imagenResultado = await ObtenerImagenHeatmapAsync(camara, dataRequest, ct);
 
                 if (!imagenResultado.Exito)
-                {
                     return Resultado<HeatmapInformacion>.Fallo(imagenResultado.Error ?? $"Error al descargar el heatmap ({camara?.IP ?? "IP no especificada"})");
-                }
 
                 var imagenPath = await _almacenamientoImagenesService.Guardar(new List<byte[]>
                 {
@@ -82,9 +72,7 @@ namespace ViisionRemolques.Services.ISAPI
                 }, cancellationToken: ct);
 
                 if (imagenPath is null || imagenPath.Count == 0)
-                {
                     return Resultado<HeatmapInformacion>.Fallo($"Error al guardar la imagen del heatmap ({camara?.IP ?? "IP no especificada"})");
-                }
 
                 return Resultado<HeatmapInformacion>.Ok(new HeatmapInformacion
                 {
@@ -113,17 +101,13 @@ namespace ViisionRemolques.Services.ISAPI
                 var response = await client.ExecuteAsync(request, ct);
 
                 if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
-                {
                     return Resultado<bool>.Fallo($"Respuesta HTTP inválida o vacía al consultar estado de heatmap ({response.StatusCode}).");
-                }
 
                 XDocument doc = XDocument.Parse(response.Content);
                 string? value = doc.Buscar("//*[local-name()='enabled']");
 
                 if (bool.TryParse(value, out bool result))
-                {
                     return Resultado<bool>.Ok(result);
-                }
 
                 return Resultado<bool>.Fallo("No se pudo analizar el nodo 'enabled' de la respuesta XML.");
             }
@@ -164,9 +148,7 @@ namespace ViisionRemolques.Services.ISAPI
                 var response = await client.ExecuteAsync(request, ct);
 
                 if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
-                {
                     return Resultado<HeatmapMinMaxResponse>.Fallo($"Respuesta HTTP inválida o vacía al consultar valores Min/Max ({response.StatusCode}).");
-                }
 
                 XDocument doc = XDocument.Parse(response.Content);
 
@@ -208,19 +190,13 @@ namespace ViisionRemolques.Services.ISAPI
                 var response = await client.ExecuteAsync(request, ct);
 
                 if (!response.IsSuccessful)
-                {
                     return Resultado<byte[]>.Fallo($"Error HTTP al descargar la imagen ({response.StatusCode}).");
-                }
 
                 if (response.ContentType != null && response.ContentType.Contains("xml", StringComparison.OrdinalIgnoreCase))
-                {
                     return Resultado<byte[]>.Fallo("La cámara retornó un documento XML (posible error) en lugar de una imagen binaria.");
-                }
 
                 if (response.RawBytes == null || response.RawBytes.Length == 0)
-                {
                     return Resultado<byte[]>.Fallo("La cámara no retornó datos binarios para la imagen.");
-                }
 
                 return Resultado<byte[]>.Ok(response.RawBytes);
             }
