@@ -9,8 +9,15 @@ using System.Data;
 using System.Text;
 using ViisionRemolques;
 using ViisionRemolques.Auth.YARP;
+using ViisionRemolques.Settings;
 
 var builder = WebApplication.CreateBuilder();
+
+// Settings
+builder.Services.AddOptions<FDLibSettings>()
+    .Bind(builder.Configuration.GetSection("FDLib"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder.Services.AddProblemDetails();
 

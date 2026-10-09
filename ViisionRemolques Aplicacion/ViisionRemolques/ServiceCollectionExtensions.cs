@@ -11,6 +11,7 @@ using ViisionRemolques.Services.ISAPI.PTZ;
 using ViisionRemolques.Services.ISAPI.PTZ.Provider;
 using ViisionRemolques.Services.ISAPI.VCA;
 using ViisionRemolques.Services.ISAPI.VCA.Providers;
+using ViisionRemolques.Settings;
 
 namespace ViisionRemolques
 {
@@ -20,12 +21,13 @@ namespace ViisionRemolques
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
 
-            services.AddTransient<DbConnection>(sp => new SqlConnection(configuration.GetConnectionString("DatabaseConnection")));
+            services.AddTransient<DbConnection>(sp => 
+                new SqlConnection(configuration.GetConnectionString("DatabaseConnection")));
 
             //Repositorios
             services.AddScoped<CamaraRepository>();
-
             services.AddScoped<ImagenesRepository>();
+
             services.AddScoped<EventoSmartRepository>();
             services.AddScoped<EventoAlarmaRecuentoPersonasRepository>();
             services.AddScoped<EventoANPRRepository>();
@@ -50,8 +52,7 @@ namespace ViisionRemolques
             services.AddTransient<VcaProviderResolver>();
             services.AddTransient<VcaService>();
 
-            //services.AddTransient<VCAService>();
-
+            services.AddTransient<FDLibService>();
 
             services.AddTransient<HeatmapService>();
             services.AddTransient<InterseccionesService>();
