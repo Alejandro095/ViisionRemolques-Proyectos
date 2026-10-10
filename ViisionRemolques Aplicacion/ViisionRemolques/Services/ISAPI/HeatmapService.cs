@@ -88,7 +88,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<HeatmapInformacion>.Fallo($"Excepción: {ex.Message}");
+                return Resultado<HeatmapInformacion>.Fallo(ex);
             }
         }
 
@@ -113,7 +113,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<bool>.Fallo($"Excepción: {ex.Message}");
+                return Resultado<bool>.Fallo(ex);
             }
         }
 
@@ -169,7 +169,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<HeatmapMinMaxResponse>.Fallo($"Excepción: {ex.Message}");
+                return Resultado<HeatmapMinMaxResponse>.Fallo(ex);
             }
         }
 
@@ -202,7 +202,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<byte[]>.Fallo($"Excepción: {ex.Message}");
+                return Resultado<byte[]>.Fallo(ex);
             }
         }
 

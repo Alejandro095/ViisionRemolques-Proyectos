@@ -56,18 +56,4 @@ namespace ViisionRemolques.Repositories.Eventos
             }, transaction: transaction);
         }
     }
-
-    //public class EventoBaseEntity
-    //{
-    //    public long IdInterno { get; set; }
-    //    public long? IdExterno { get; set; }
-    //    public string? CamaraIP { get; set; }
-    //    public string? CamaraMAC { get; set; }
-    //    public string? Evento {  get; set; }
-    //    public int Prioridad { get; set; } = 5;
-    //    public string? TablaExterna { get; set; }
-    //    public string? ReferenciaExterna { get; set; }
-    //    public DateTime FechaEvento { get; set; } = DateTime.Now;
-    //    public string? Payload { get; set; }
-    //}
 }

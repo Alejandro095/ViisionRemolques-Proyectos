@@ -6,6 +6,8 @@ using ViisionRemolques.Jobs;
 using ViisionRemolques.Repositories;
 using ViisionRemolques.Repositories.Eventos;
 using ViisionRemolques.Services;
+using ViisionRemolques.Services.Centralia;
+using ViisionRemolques.Services.Centralia.Endpoints;
 using ViisionRemolques.Services.ISAPI;
 using ViisionRemolques.Services.ISAPI.PTZ;
 using ViisionRemolques.Services.ISAPI.PTZ.Provider;
@@ -37,12 +39,15 @@ namespace ViisionRemolques
             services.AddScoped<EventoRecuentoPersonasRepository>();
             services.AddScoped<EventoTraficoRodadoRepository>();
 
+            services.AddScoped<CiudadanosRepository>();
+
             return services;
         }
 
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             services.AddSingleton<IsapiClientFactoryService>();
+            services.AddSingleton<CentraliaApiClientService>();
 
             services.AddTransient<PtzIsapiProvider>();
             services.AddTransient<PtzService>();
@@ -60,6 +65,8 @@ namespace ViisionRemolques
             services.AddTransient<AlmacenamientoImagenesService>();
             services.AddTransient<WebhookPayloadExtractorService>();
 
+            services.AddTransient<CiudadanosReportadosEndpoint>();
+
             return services;
         }
 
@@ -67,7 +74,7 @@ namespace ViisionRemolques
         public static IServiceCollection AddApplicationJobs(this IServiceCollection services)
         {
             services.AddTransient<EventosWebhookJob>();
-            services.AddTransient<SincronizarRostrosJob>();
+            services.AddTransient<SincronizarCiudadanosJob>();
 
             return services;
         }

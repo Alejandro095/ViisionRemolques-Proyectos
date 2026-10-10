@@ -69,9 +69,9 @@ namespace ViisionRemolques.Services.ISAPI.VCA
 
                 return Resultado.Ok();
             }
-            catch
+            catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al reiniciar la cámara ({camara.IP})");
+                return Resultado.Fallo(ex);
             }
         }
     }

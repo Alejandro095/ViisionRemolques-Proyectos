@@ -17,11 +17,11 @@ namespace ViisionRemolques.Repositories.Eventos
             EventoExtractorModelo eventoExtractorModelo, 
             List<string>? ImagenesPaths = null,
             string? Payload = null
-        )
+        ) 
         {
             ImagenesPaths ??= new List<string>();
 
-            await _dbConnection.OpenAsync();
+            if (_dbConnection.State != ConnectionState.Open) await _dbConnection.OpenAsync();
 
             await using var transaction = await _dbConnection.BeginTransactionAsync();
 

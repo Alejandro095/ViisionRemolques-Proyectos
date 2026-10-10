@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using RestSharp;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using ViisionRemolques.Settings;
 
@@ -9,12 +11,9 @@ namespace ViisionRemolques.Services.Centralia
     {
         private readonly CentraliaSettings _centraliaSettings;
         private readonly RestClient _client;
-        public readonly string Licencia = "8F^3k1z#0@pLm!2Wv#4Xs7z$8qRTy*1B";
         private string _tokenActual = string.Empty;
         private DateTime _fechaExpiracionToken = DateTime.MinValue;
         private readonly SemaphoreSlim _semaforoToken = new(1, 1);
-        private string _usuarioActual = string.Empty;
-        private string _contraseniaActual = string.Empty;
 
         public CentraliaApiClientService(HttpClient httpClient, IOptions<CentraliaSettings> centraliaSettings)
         {
@@ -23,39 +22,56 @@ namespace ViisionRemolques.Services.Centralia
             _client = new RestClient(httpClient, options);
         }
 
-        public async Task IniciarSesionAsync(string usuario, string contrasenia)
+        public async Task<TResponse> GetAsync<TResponse>(string endpoint)
         {
-            _usuarioActual = usuario;
-            _contraseniaActual = contrasenia;
-            await RenovarTokenAsync();
+            return await SendAsync<TResponse>(endpoint, Method.Get, null);
         }
 
-        public async Task<TResponse> PostAsync<TResponse>(string endpoint, IRequestConLicencia payload)
+        public async Task<TResponse> PostAsync<TResponse>(string endpoint, object? payload = null)
+        {
+            return await SendAsync<TResponse>(endpoint, Method.Post, payload);
+        }
+
+        public async Task<TResponse> PutAsync<TResponse>(string endpoint, object? payload = null)
+        {
+            return await SendAsync<TResponse>(endpoint, Method.Put, payload);
+        }
+
+        public async Task<TResponse> DeleteAsync<TResponse>(string endpoint)
+        {
+            return await SendAsync<TResponse>(endpoint, Method.Delete, null);
+        }
+
+        private async Task<TResponse> SendAsync<TResponse>(string endpoint, Method method, object? payload)
         {
             await AsegurarTokenValidoAsync();
 
             var url = _centraliaSettings.GetApiFullUrl(endpoint);
-            var request = new RestRequest(url, Method.Post);
+            var request = new RestRequest(url, method);
 
             request.AddHeader("Authorization", $"Bearer {_tokenActual}");
 
-            // Asignamos la licencia al contrato
-            payload.Licencia = this.Licencia;
+            if (method == Method.Post || method == Method.Put || method == Method.Patch)
+            {
+                request.AddHeader("Content-Type", "application/json");
 
-            request.AddJsonBody(payload);
+                var jsonNode = JsonSerializer.SerializeToNode(payload)?.AsObject() ?? new JsonObject();
+                jsonNode["licencia"] = _centraliaSettings.Licencia;
+
+                request.AddStringBody(jsonNode.ToString(), DataFormat.Json);
+            }
 
             var response = await _client.ExecuteAsync<ApiResponse<TResponse>>(request);
 
             if (response.IsSuccessful && response.Data != null && !response.Data.Error)
             {
-                // Validación para evitar que C# advierta sobre el retorno nulo
                 if (response.Data.Data == null)
                     throw new Exception($"La API reportó éxito en {endpoint}, pero el objeto 'data' vino nulo.");
 
                 return response.Data.Data;
             }
 
-            throw new Exception($"Error en {endpoint}: {response.Data?.Message ?? response.ErrorMessage}");
+            throw new Exception($"Error en {endpoint} ({method}): {response.Data?.Message ?? response.ErrorMessage}");
         }
 
         private async Task AsegurarTokenValidoAsync()
@@ -79,16 +95,16 @@ namespace ViisionRemolques.Services.Centralia
 
         private async Task RenovarTokenAsync()
         {
-            if (string.IsNullOrEmpty(_usuarioActual) || string.IsNullOrEmpty(_contraseniaActual))
-                throw new InvalidOperationException("Credenciales no configuradas. Llama a IniciarSesionAsync().");
+            if (string.IsNullOrEmpty(_centraliaSettings.Usuario) || string.IsNullOrEmpty(_centraliaSettings.Secreto))
+                throw new InvalidOperationException("Credenciales no configuradas en CentraliaSettings.");
 
             var url = _centraliaSettings.GetApiFullUrl("Auth/login");
             var request = new RestRequest(url, Method.Post);
 
             request.AddJsonBody(new
             {
-                usuario = _usuarioActual,
-                contrasenia = _contraseniaActual,
+                usuario = _centraliaSettings.Usuario,
+                contrasenia = _centraliaSettings.Secreto,
                 idCatUsuarioTipo = 0
             });
 
@@ -96,7 +112,6 @@ namespace ViisionRemolques.Services.Centralia
 
             if (response.IsSuccessful && response.Data != null && !response.Data.Error)
             {
-                // Navegación segura para extraer el token
                 _tokenActual = response.Data.Data?.Token ?? string.Empty;
 
                 if (string.IsNullOrEmpty(_tokenActual))
@@ -106,7 +121,7 @@ namespace ViisionRemolques.Services.Centralia
                 return;
             }
 
-            throw new Exception($"Falló la renovación del token. Status: {response.StatusCode} - {response.Data?.Message}");
+            throw new Exception($"Falló la renovación automática del token. Status: {response.StatusCode} - {response.Data?.Message}");
         }
 
         public void Dispose()
@@ -114,11 +129,6 @@ namespace ViisionRemolques.Services.Centralia
             _client?.Dispose();
             _semaforoToken?.Dispose();
         }
-    }
-
-    public interface IRequestConLicencia
-    {
-        string Licencia { get; set; }
     }
 
     public class ApiResponse<T>

@@ -59,9 +59,9 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
                     .Select(t => ModoPorType[t]);
 
                 return Resultado<IEnumerable<VCAModoEnum>>.Ok(modos);
-            } catch
+            } catch (Exception ex)
             {
-                return Resultado<IEnumerable<VCAModoEnum>>.Fallo($"Excepción al consultar capabilities VCA ({camara.IP})");
+                return Resultado<IEnumerable<VCAModoEnum>>.Fallo(ex);
             }
         }
 
@@ -93,9 +93,9 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
 
 
                 return Resultado.Ok();
-            } catch
+            } catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al cambiar el modo VCA ({camara.IP})");
+                return Resultado.Fallo(ex);
             }
         }
 
@@ -126,9 +126,9 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
 
                 return Resultado<VCAModoEnum>.Ok(modo);
             }
-            catch
+            catch (Exception ex)
             {
-                return Resultado<VCAModoEnum>.Fallo($"Excepción al obtener el modo VCA actual ({camara.IP})");
+                return Resultado<VCAModoEnum>.Fallo(ex);
             }
         }
     }

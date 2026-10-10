@@ -38,7 +38,7 @@ namespace ViisionRemolques.Services.ISAPI.PTZ.Provider
             }
             catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al mover PTZ ({camara.IP}): {ex.Message}");
+                return Resultado.Fallo(ex);
             }
         }
 
@@ -65,7 +65,7 @@ namespace ViisionRemolques.Services.ISAPI.PTZ.Provider
             }
             catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al hacer zoom ({camara.IP}): {ex.Message}");
+                return Resultado.Fallo(ex);
             }
         }
 
@@ -91,7 +91,7 @@ namespace ViisionRemolques.Services.ISAPI.PTZ.Provider
             }
             catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al enfocar ({camara.IP}): {ex.Message}");
+                return Resultado.Fallo(ex);
             }
         }
 
@@ -117,7 +117,7 @@ namespace ViisionRemolques.Services.ISAPI.PTZ.Provider
             }
             catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al ajustar iris ({camara.IP}): {ex.Message}");
+                return Resultado.Fallo(ex);
             }
         }
 
@@ -137,7 +137,7 @@ namespace ViisionRemolques.Services.ISAPI.PTZ.Provider
             }
             catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al activar la escobilla ({camara.IP}): {ex.Message}");
+                return Resultado.Fallo(ex);
             }
         }
 
@@ -157,7 +157,7 @@ namespace ViisionRemolques.Services.ISAPI.PTZ.Provider
             }
             catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al ejecutar enfoque auxiliar ({camara.IP}): {ex.Message}");
+                return Resultado.Fallo(ex);
             }
         }
 
@@ -177,7 +177,7 @@ namespace ViisionRemolques.Services.ISAPI.PTZ.Provider
             }
             catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al inicializar el objetivo ({camara.IP}): {ex.Message}");
+                return Resultado.Fallo(ex);
             }
         }
 
@@ -199,7 +199,7 @@ namespace ViisionRemolques.Services.ISAPI.PTZ.Provider
             }
             catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al calibrar zoom ({camara.IP}): {ex.Message}");
+                return Resultado.Fallo(ex);
             }
         }
     }

@@ -21,6 +21,11 @@ builder.Services.AddOptions<FDLibSettings>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services.AddOptions<CentraliaSettings>()
+    .Bind(builder.Configuration.GetSection("Centralia"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddHttpClient("IsapiCameraClient")
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {
@@ -135,7 +140,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHangfireDashboard("/hangfire");
 
-RecurringJob.AddOrUpdate<SincronizarRostrosJob>(
+RecurringJob.AddOrUpdate<SincronizarCiudadanosJob>(
     "sincronizador-personas-rostros-blacklist",
     job => job.Run(),
     Cron.Daily

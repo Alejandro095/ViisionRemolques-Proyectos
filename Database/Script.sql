@@ -424,5 +424,48 @@ GO
 
 CREATE NONCLUSTERED INDEX IX_Imagenes_EventoIdInterno
 ON Imagenes (EventoIdInterno);
+GO
 
+
+
+-- TABLA CiudadanosReportados ---------------------------------------------------------//
+CREATE TABLE CiudadanosReportados (
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    IdExterno                           BIGINT NOT NULL,
+    Nombre                              NVARCHAR(300) NULL,
+    ApellidoPaterno                     NVARCHAR(300) NULL,
+    ApellidoMaterno                     NVARCHAR(300) NULL,
+    Sexo                                NVARCHAR(50) NULL,
+    FechaNacimiento                     DATETIME NULL,
+    RFC                                 NVARCHAR(50) NULL,
+    Curp                                NVARCHAR(50) NULL,
+    IFE                                 NVARCHAR(50) NULL,
+    Mensaje                             NVARCHAR(MAX) NULL,
+    Accion                              NVARCHAR(MAX) NULL,
+    AltoRiesgo                          BIT NOT NULL DEFAULT 0,
+    Activo                              BIT NOT NULL DEFAULT 0,
+    FechaCreacion                       DATETIME NULL,
+    FechaModificacion                   DATETIME NULL
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_CiudadanosReportados_IdExterno
+ON CiudadanosReportados (IdExterno);
+GO
+
+-- TABLA CiudadanosReportadosImagenes -------------------------------------------------//
+CREATE TABLE CiudadanosReportadosImagenes (
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    IdExterno                           BIGINT NOT NULL,
+    CiudadanoIdExterno                  BIGINT NOT NULL,
+    Path                                NVARCHAR(MAX) NULL,
+    Hash                                NVARCHAR(1000) NULL,
+    Activo                              BIT NOT NULL DEFAULT 0,
+    FechaCreacion                       DATETIME,
+    FechaModificacion                   DATETIME,
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_CiudadanosReportadosImagenes_IdExterno
+ON CiudadanosReportadosImagenes (IdExterno);
 GO

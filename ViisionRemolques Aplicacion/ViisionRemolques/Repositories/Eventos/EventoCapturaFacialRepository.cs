@@ -21,7 +21,7 @@ namespace ViisionRemolques.Repositories.Eventos
         {
             ImagenesPaths ??= new List<string>();
 
-            await _dbConnection.OpenAsync();
+            if (_dbConnection.State != ConnectionState.Open) await _dbConnection.OpenAsync();
 
             await using var transaction = await _dbConnection.BeginTransactionAsync();
 

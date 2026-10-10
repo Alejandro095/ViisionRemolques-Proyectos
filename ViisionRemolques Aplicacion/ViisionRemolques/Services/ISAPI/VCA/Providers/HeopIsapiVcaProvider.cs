@@ -100,9 +100,9 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
 
                 return Resultado.Ok();
             }
-            catch
+            catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al cambiar estado de la app ({camara.IP})");
+                return Resultado.Fallo(ex);
             }
         }
 
@@ -135,9 +135,9 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
 
                 return Resultado<List<AppInfo>>.Ok(apps);
             }
-            catch
+            catch (Exception ex)
             {
-                return Resultado<List<AppInfo>>.Fallo($"Excepción al consultar las apps VCA ({camara.IP})");
+                return Resultado<List<AppInfo>>.Fallo(ex);
             }
         }
     }

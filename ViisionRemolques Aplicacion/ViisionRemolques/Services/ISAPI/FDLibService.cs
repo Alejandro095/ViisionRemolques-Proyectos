@@ -59,7 +59,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<string>.Fallo($"Excepción al crear la biblioteca facial ({camara.IP}): {ex.ToString()}");
+                return Resultado<string>.Fallo(ex);
             }
         }
 
@@ -98,7 +98,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<string?>.Fallo($"Excepción al obtener el FDID de la biblioteca ({camara.IP}): {ex.ToString()}");
+                return Resultado<string?>.Fallo(ex);
             }
         }
 
@@ -157,7 +157,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<string>.Fallo($"Excepción al subir foto de PersonId {insertarImagenRequest.PersonId} ({camara.IP}): {ex.ToString()}");
+                return Resultado<string>.Fallo(ex);
             }
         }
 
@@ -186,7 +186,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al disparar modelado por tandas de la biblioteca {fdid} ({camara.IP}): {ex.ToString()}");
+                return Resultado.Fallo(ex);
             }
         }
 
@@ -216,7 +216,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado.Fallo($"Excepción al borrar PID {pid} de la biblioteca {fdid} ({camara.IP}): {ex.ToString()}");
+                return Resultado.Fallo(ex);
             }
         }
 
@@ -277,7 +277,7 @@ namespace ViisionRemolques.Services.ISAPI
             }
             catch (Exception ex)
             {
-                return Resultado<IEnumerable<RegistroFacial>>.Fallo($"Excepción al consultar registros de la biblioteca {fdid} ({camara.IP}): {ex.ToString()}");
+                return Resultado<IEnumerable<RegistroFacial>>.Fallo(ex);
             }
         }
     }
