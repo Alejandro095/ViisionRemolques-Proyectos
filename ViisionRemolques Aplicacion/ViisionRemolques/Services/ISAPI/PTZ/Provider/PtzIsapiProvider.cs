@@ -7,9 +7,9 @@ namespace ViisionRemolques.Services.ISAPI.PTZ.Provider
 {
     public class PtzIsapiProvider
     {
-        private readonly ISAPIClientFactoryService _isapiClientFactoryService;
+        private readonly IsapiClientFactoryService _isapiClientFactoryService;
 
-        public PtzIsapiProvider(ISAPIClientFactoryService isapiClientFactoryService)
+        public PtzIsapiProvider(IsapiClientFactoryService isapiClientFactoryService)
         {
             _isapiClientFactoryService = isapiClientFactoryService;
         }

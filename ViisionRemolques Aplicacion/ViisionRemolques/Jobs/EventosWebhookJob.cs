@@ -6,9 +6,9 @@ using ViisionRemolques.Services;
 
 namespace ViisionRemolques.Jobs
 {
-    public class ProcesadorEventosWebhookJob
+    public class EventosWebhookJob
     {
-        private readonly ILogger<ProcesadorEventosWebhookJob> _logger;
+        private readonly ILogger<EventosWebhookJob> _logger;
         private readonly AlmacenamientoImagenesService _almacenamientoImagenesService;
 
 
@@ -21,8 +21,8 @@ namespace ViisionRemolques.Jobs
         private readonly EventoRecuentoPersonasRepository _eventoRecuentoPersonasRepository;
         private readonly EventoTraficoRodadoRepository _eventoTraficoRodadoRepository;
 
-        public ProcesadorEventosWebhookJob(
-            ILogger<ProcesadorEventosWebhookJob> logger,
+        public EventosWebhookJob(
+            ILogger<EventosWebhookJob> logger,
             AlmacenamientoImagenesService almacenamientoImagenesService,
             EventoSmartRepository eventoSmartRepository,
             EventoAlarmaRecuentoPersonasRepository eventoAlarmaRecuentoPersonasRepository,

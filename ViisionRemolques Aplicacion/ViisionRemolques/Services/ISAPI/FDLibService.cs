@@ -9,11 +9,11 @@ namespace ViisionRemolques.Services.ISAPI
 {
     public class FDLibService
     {
-        private readonly ISAPIClientFactoryService _isapiClientFactoryService;
+        private readonly IsapiClientFactoryService _isapiClientFactoryService;
         private readonly FDLibSettings _fdLibSettings;
 
         public FDLibService(
-            ISAPIClientFactoryService isapiClientFactoryService,
+            IsapiClientFactoryService isapiClientFactoryService,
             IOptions<FDLibSettings> fdLibSettings)
         {
             _isapiClientFactoryService = isapiClientFactoryService;

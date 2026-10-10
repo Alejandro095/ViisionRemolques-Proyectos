@@ -9,6 +9,8 @@ using System.Data;
 using System.Text;
 using ViisionRemolques;
 using ViisionRemolques.Auth.YARP;
+using ViisionRemolques.Jobs;
+using ViisionRemolques.Services.Centralia;
 using ViisionRemolques.Settings;
 
 var builder = WebApplication.CreateBuilder();
@@ -18,6 +20,18 @@ builder.Services.AddOptions<FDLibSettings>()
     .Bind(builder.Configuration.GetSection("FDLib"))
     .ValidateDataAnnotations()
     .ValidateOnStart();
+
+builder.Services.AddHttpClient("IsapiCameraClient")
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+    });
+
+builder.Services.AddHttpClient<CentraliaApiClientService>()
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+    });
 
 builder.Services.AddProblemDetails();
 
@@ -120,6 +134,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHangfireDashboard("/hangfire");
+
+RecurringJob.AddOrUpdate<SincronizarRostrosJob>(
+    "sincronizador-personas-rostros-blacklist",
+    job => job.Run(),
+    Cron.Daily
+);
+
 app.MapHealthChecks("/health");
 
 app.UseRouting();

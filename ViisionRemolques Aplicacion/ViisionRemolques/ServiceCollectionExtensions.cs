@@ -42,7 +42,7 @@ namespace ViisionRemolques
 
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
-            services.AddScoped<ISAPIClientFactoryService>();
+            services.AddSingleton<IsapiClientFactoryService>();
 
             services.AddTransient<PtzIsapiProvider>();
             services.AddTransient<PtzService>();
@@ -66,7 +66,8 @@ namespace ViisionRemolques
 
         public static IServiceCollection AddApplicationJobs(this IServiceCollection services)
         {
-            services.AddTransient<ProcesadorEventosWebhookJob>();
+            services.AddTransient<EventosWebhookJob>();
+            services.AddTransient<SincronizarRostrosJob>();
 
             return services;
         }

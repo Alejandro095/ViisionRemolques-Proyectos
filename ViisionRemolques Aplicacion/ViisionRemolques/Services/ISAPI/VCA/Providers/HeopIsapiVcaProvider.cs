@@ -8,7 +8,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
 {
     public class HeopIsapiVcaProvider : IVcaProvider
     {
-        private readonly ISAPIClientFactoryService _isapiClientFactoryService;
+        private readonly IsapiClientFactoryService _isapiClientFactoryService;
 
         bool IVcaProvider.RequiereReinicioAlCambiarModo => false;
 
@@ -23,7 +23,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
         private static readonly Dictionary<int, VCAModoEnum> ModoPorAppId =
             AppIdPorModo.ToDictionary(kv => kv.Value, kv => kv.Key);
 
-        public HeopIsapiVcaProvider(ISAPIClientFactoryService isapiClientFactoryService)
+        public HeopIsapiVcaProvider(IsapiClientFactoryService isapiClientFactoryService)
         {
             _isapiClientFactoryService = isapiClientFactoryService;
         }

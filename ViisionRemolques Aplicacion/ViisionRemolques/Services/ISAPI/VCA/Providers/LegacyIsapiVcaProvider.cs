@@ -9,7 +9,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
 {
     public class LegacyIsapiVcaProvider : IVcaProvider
     {
-        private readonly ISAPIClientFactoryService _isapiClientFactoryService;
+        private readonly IsapiClientFactoryService _isapiClientFactoryService;
 
         bool IVcaProvider.RequiereReinicioAlCambiarModo => true;
 
@@ -23,7 +23,7 @@ namespace ViisionRemolques.Services.ISAPI.VCA.Providers
             [VCAModoEnum.TraficoRodado] = "roadDetection",
         };
 
-        public LegacyIsapiVcaProvider(ISAPIClientFactoryService isapiClientFactoryService)
+        public LegacyIsapiVcaProvider(IsapiClientFactoryService isapiClientFactoryService)
         {
             _isapiClientFactoryService = isapiClientFactoryService;
         }

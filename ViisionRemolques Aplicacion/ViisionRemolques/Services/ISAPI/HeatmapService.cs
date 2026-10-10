@@ -8,11 +8,11 @@ namespace ViisionRemolques.Services.ISAPI
 {
     public class HeatmapService
     {
-        private readonly ISAPIClientFactoryService _isapiClientFactoryService;
+        private readonly IsapiClientFactoryService _isapiClientFactoryService;
         private readonly AlmacenamientoImagenesService _almacenamientoImagenesService;
 
         public HeatmapService(
-            ISAPIClientFactoryService isapiClientFactoryService,
+            IsapiClientFactoryService isapiClientFactoryService,
             AlmacenamientoImagenesService almacenamientoImagenesService)
         {
             _isapiClientFactoryService = isapiClientFactoryService;

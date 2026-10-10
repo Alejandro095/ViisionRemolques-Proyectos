@@ -54,7 +54,7 @@ namespace ViisionRemolques.Controllers
                 var imagenesPaths = await _almacenamientoImagenesService.Guardar(webhookPayload.Imagenes);
 
                 // Encola el trabajo y libera inmediatamente la petición del webhook
-                Jobs.Enqueue<ProcesadorEventosWebhookJob>(
+                Jobs.Enqueue<EventosWebhookJob>(
                     job => job.ProcesarEventoAsync(evento, imagenesPaths, webhookPayload.Body, cancellationToken)
                 );
 

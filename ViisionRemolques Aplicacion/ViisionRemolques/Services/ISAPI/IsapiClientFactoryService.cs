@@ -1,11 +1,19 @@
 ﻿using RestSharp;
 using RestSharp.Authenticators.Digest;
+using System;
+using System.Net.Http;
 using ViisionRemolques.Repositories;
 
-namespace ViisionRemolques.Services
+namespace ViisionRemolques.Services.ISAPI
 {
-    public class ISAPIClientFactoryService
+    public class IsapiClientFactoryService
     {
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public IsapiClientFactoryService(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
 
         public RestClient Crear(CamaraEntity camara)
         {
@@ -17,13 +25,14 @@ namespace ViisionRemolques.Services
 
             var baseUrl = $"http://{camara.IP}";
 
-            var options = new RestClientOptions(baseUrl)
-            {
-                Timeout = TimeSpan.FromSeconds(120),
-                Authenticator = new DigestAuthenticator(camara.DigestUsuario, camara.DigestContrasena)
-            };
-            return new RestClient(options);
-        }
+            var httpClient = _httpClientFactory.CreateClient("IsapiCameraClient");
 
+            httpClient.Timeout = TimeSpan.FromSeconds(120);
+
+            return new RestClient(httpClient, new RestClientOptions(baseUrl)
+            {
+                Authenticator = new DigestAuthenticator(camara.DigestUsuario, camara.DigestContrasena)
+            });
+        }
     }
 }

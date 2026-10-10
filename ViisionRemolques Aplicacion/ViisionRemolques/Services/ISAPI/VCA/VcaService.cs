@@ -7,10 +7,10 @@ namespace ViisionRemolques.Services.ISAPI.VCA
 {
     public class VcaService
     {
-        private readonly ISAPIClientFactoryService _isapiClientFactoryService;
+        private readonly IsapiClientFactoryService _isapiClientFactoryService;
         private readonly VcaProviderResolver _vcaProviderResolver;
 
-        public VcaService(VcaProviderResolver vcaProviderResolver, ISAPIClientFactoryService isapiClientFactoryService)
+        public VcaService(VcaProviderResolver vcaProviderResolver, IsapiClientFactoryService isapiClientFactoryService)
         {
             _vcaProviderResolver = vcaProviderResolver;
             _isapiClientFactoryService = isapiClientFactoryService;

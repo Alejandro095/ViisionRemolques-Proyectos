@@ -8,11 +8,11 @@ namespace ViisionRemolques.Services.ISAPI
 {
     public class InterseccionesService
     {
-        private readonly ISAPIClientFactoryService _isapiClientFactoryService;
+        private readonly IsapiClientFactoryService _isapiClientFactoryService;
         private readonly AlmacenamientoImagenesService _almacenamientoImagenesService;
 
         public InterseccionesService(
-            ISAPIClientFactoryService ISAPIClientFactoryService,
+            IsapiClientFactoryService ISAPIClientFactoryService,
             AlmacenamientoImagenesService almacenamientoImagenesService)
         {
             _isapiClientFactoryService = ISAPIClientFactoryService;
