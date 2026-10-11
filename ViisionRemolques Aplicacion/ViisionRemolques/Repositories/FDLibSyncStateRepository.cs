@@ -32,7 +32,7 @@ namespace ViisionRemolques.Repositories
             FROM FDLibSyncState s
             LEFT JOIN CiudadanosReportadosFotosEstado pf ON pf.ImagenIdExterno = s.ImagenIdExterno
             LEFT JOIN CiudadanosReportados c ON c.IdExterno = s.CiudadanoIdExterno
-            WHERE s.Estado = 'Pendiente';";
+            WHERE s.Estado != 'Sincronizado';";
 
             try
             {

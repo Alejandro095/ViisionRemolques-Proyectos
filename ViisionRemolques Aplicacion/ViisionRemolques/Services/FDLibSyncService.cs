@@ -129,8 +129,9 @@ namespace ViisionRemolques.Services
                 return null;
             }
 
-            var nombre = $"{fila.Nombre} {fila.ApellidoPaterno ?? fila.ApellidoMaterno}".Trim();
             var personId = $"{fila.CiudadanoIdExterno}v{fila.ImagenIdExterno}";
+            var nombre = personId;
+           
 
             var request = new FDLibService.InsertarImagenRequest(fdid, personId, nombre, imagenBytes);
             var resultado = await _fdLibService.InsertarImagenAsync(camara, request, ct);
