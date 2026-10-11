@@ -14,18 +14,18 @@ namespace ViisionRemolques.Controllers
     public class WebhookController : ControllerBase
     {
         private readonly ILogger<WebhookController> _logger;
-        private readonly AlmacenamientoImagenesService _almacenamientoImagenesService;
+        private readonly AlmacenamientoService _almacenamientoService;
         private readonly WebhookPayloadExtractorService _webhookPayloadExtractorService;
         private readonly EventoSmartRepository _eventoSmartRepository;
 
         public WebhookController(
             ILogger<WebhookController> logger,
-            AlmacenamientoImagenesService almacenamientoImagenesService,
+            AlmacenamientoService almacenamientoService,
             WebhookPayloadExtractorService webhookPayloadExtractorService,
             EventoSmartRepository eventoSmartRepository)
         {
             _logger = logger;
-            _almacenamientoImagenesService = almacenamientoImagenesService;
+            _almacenamientoService = almacenamientoService;
             _webhookPayloadExtractorService = webhookPayloadExtractorService;
             _eventoSmartRepository = eventoSmartRepository;
         }
@@ -51,7 +51,7 @@ namespace ViisionRemolques.Controllers
 
                 if (evento is not null && evento.Evento.VCAModo == VCAModoEnum.Ninguno) return Ok();
 
-                var imagenesPaths = await _almacenamientoImagenesService.Guardar(webhookPayload.Imagenes);
+                var imagenesPaths = await _almacenamientoService.GuardarImagen(webhookPayload.Imagenes);
 
                 // Encola el trabajo y libera inmediatamente la petición del webhook
                 Jobs.Enqueue<EventosWebhookJob>(

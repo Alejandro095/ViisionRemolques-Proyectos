@@ -23,7 +23,7 @@ namespace ViisionRemolques
         {
             DefaultTypeMap.MatchNamesWithUnderscores = true;
 
-            services.AddTransient<DbConnection>(sp => 
+            services.AddScoped<DbConnection>(sp => 
                 new SqlConnection(configuration.GetConnectionString("DatabaseConnection")));
 
             //Repositorios
@@ -38,6 +38,7 @@ namespace ViisionRemolques
             services.AddScoped<EventoDeteccionTipoMultiobjetivoRepository>();
             services.AddScoped<EventoRecuentoPersonasRepository>();
             services.AddScoped<EventoTraficoRodadoRepository>();
+            services.AddScoped<FDLibSyncStateRepository>();
 
             services.AddScoped<CiudadanosRepository>();
 
@@ -58,14 +59,19 @@ namespace ViisionRemolques
             services.AddTransient<VcaService>();
 
             services.AddTransient<FDLibService>();
+            services.AddTransient<FDLibSyncService>();
 
             services.AddTransient<HeatmapService>();
             services.AddTransient<InterseccionesService>();
 
-            services.AddTransient<AlmacenamientoImagenesService>();
+            services.AddSingleton<AlmacenamientoService>();
             services.AddTransient<WebhookPayloadExtractorService>();
 
-            services.AddTransient<CiudadanosReportadosEndpoint>();
+            services.AddTransient<CiudadanosEndpoint>();
+
+            services.AddTransient<CiudadanosService>();
+
+            services.AddSingleton<PathsService>();
 
             return services;
         }

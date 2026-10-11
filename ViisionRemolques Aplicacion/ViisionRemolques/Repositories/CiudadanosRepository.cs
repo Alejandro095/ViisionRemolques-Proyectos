@@ -40,13 +40,15 @@ namespace ViisionRemolques.Repositories
 
             foreach (var item in ciudadanosReportados)
             {
+                if (item.IdExterno is null) continue;
+
                 dataTable.Rows.Add(
                     item.IdExterno,
                     (object?)item.Nombre ?? DBNull.Value,
                     (object?)item.ApellidoPaterno ?? DBNull.Value,
                     (object?)item.ApellidoMaterno ?? DBNull.Value,
                     (object?)item.Sexo ?? DBNull.Value,
-                    item.FechaNacimiento,
+                    (object?)item.FechaNacimiento ?? DBNull.Value,
                     (object?)item.RFC ?? DBNull.Value,
                     (object?)item.Curp ?? DBNull.Value,
                     (object?)item.IFE ?? DBNull.Value,
@@ -77,11 +79,16 @@ namespace ViisionRemolques.Repositories
 
             foreach (var item in ciudadanosReportadosImagenes)
             {
+                if (item.IdExterno is null) continue;
+                if (item.CiudadanoIdExterno is null) continue;
+                if (item.Path is null) continue;
+                if (item.Hash is null) continue;
+
                 dataTable.Rows.Add(
                     item.IdExterno,
                     item.CiudadanoIdExterno,
-                    (object?)item.Path ?? DBNull.Value,
-                    (object?)item.Hash ?? DBNull.Value,
+                    item.Path,
+                    item.Hash,
                     item.Activo,
                     item.FechaCreacion,
                     item.FechaModificacion
@@ -91,6 +98,91 @@ namespace ViisionRemolques.Repositories
             return await EjecutarCargaMasivaAsync("CiudadanosReportadosImagenes", dataTable);
         }
 
+        public record CiudadanosImagenesAccion(long ImagenIdExterno, long CiudadanoIdExterno, string PathCentral, string HashCentral, string RutaArchivoLocal, string Accion);
+        public async Task<Resultado<IEnumerable<CiudadanosImagenesAccion>>> ObtenerDiferencias()
+        {
+            try
+            {
+                if (_dbConnection.State != ConnectionState.Open) await _dbConnection.OpenAsync();
+
+                const string sql = @"
+                    SELECT
+                        COALESCE(ci.IdExterno, f.ImagenIdExterno)       AS ImagenIdExterno,
+                        COALESCE(ci.CiudadanoIdExterno, c.IdExterno)    AS CiudadanoIdExterno,
+                        ci.Path                                         AS PathCentral,
+                        ci.Hash                                         AS HashCentral,
+                        f.RutaArchivoLocal,
+                        CASE
+                            WHEN ci.IdExterno IS NULL THEN 'Borrar'
+                            WHEN c.IdExterno IS NULL THEN 'Borrar'
+                            WHEN c.Activo = 0 OR ci.Activo = 0 THEN 'Borrar'
+                            WHEN f.ImagenIdExterno IS NULL THEN 'Descargar'
+                            WHEN ci.Hash <> f.Hash THEN 'Descargar'
+                        END AS Accion
+                    FROM CiudadanosReportadosImagenes ci
+                    LEFT JOIN CiudadanosReportados c
+                        ON c.IdExterno = ci.CiudadanoIdExterno
+                    FULL OUTER JOIN CiudadanosReportadosFotosEstado f
+                        ON f.ImagenIdExterno = ci.IdExterno
+                    WHERE ci.IdExterno IS NULL
+                       OR c.IdExterno IS NULL
+                       OR f.ImagenIdExterno IS NULL
+                       OR c.Activo = 0 OR ci.Activo = 0
+                       OR ci.Hash <> f.Hash;";
+
+                var resultados = await _dbConnection.QueryAsync<CiudadanosImagenesAccion>(sql);
+
+                return Resultado<IEnumerable<CiudadanosImagenesAccion>>.Ok(resultados);
+            }
+            catch (Exception ex)
+            {
+                return Resultado<IEnumerable<CiudadanosImagenesAccion>>.Fallo(ex);
+            }
+        }
+
+        public async Task<Resultado> BorrarEstadoFotosAsync(IEnumerable<long> imagenesIdExterno)
+        {
+            try
+            {
+                if (_dbConnection.State != ConnectionState.Open) await _dbConnection.OpenAsync();
+
+                await _dbConnection.ExecuteAsync(
+                    "DELETE FROM CiudadanosReportadosFotosEstado WHERE ImagenIdExterno IN @ids",
+                    new { ids = imagenesIdExterno });
+
+                return Resultado.Ok();
+            }
+            catch (Exception ex)
+            {
+                return Resultado.Fallo(ex);
+            }
+        }
+
+        public record CiudadanoFotoEstadoEntity(long ImagenIdExterno, long CiudadanoIdExterno, string Hash, string RutaArchivoLocal, DateTime FechaDescargaFotoLocal);
+        public async Task<Resultado> ActualizarFotosEstadoAsync(IEnumerable<CiudadanoFotoEstadoEntity> filas)
+        {
+            const string sql = @"
+                MERGE CiudadanosReportadosFotosEstado AS d
+                USING (SELECT @ImagenIdExterno AS ImagenIdExterno, @CiudadanoIdExterno AS CiudadanoIdExterno, @Hash AS Hash, @RutaArchivoLocal AS RutaArchivoLocal, @FechaDescargaFotoLocal AS FechaDescargaFotoLocal) AS o
+                    ON d.ImagenIdExterno = o.ImagenIdExterno
+                WHEN MATCHED THEN UPDATE SET
+                    Hash = o.Hash, RutaArchivoLocal = o.RutaArchivoLocal, FechaDescargaFotoLocal = o.FechaDescargaFotoLocal
+                WHEN NOT MATCHED THEN INSERT (ImagenIdExterno, CiudadanoIdExterno, Hash, RutaArchivoLocal, FechaDescargaFotoLocal)
+                    VALUES (o.ImagenIdExterno, o.CiudadanoIdExterno, o.Hash, o.RutaArchivoLocal, o.FechaDescargaFotoLocal);";
+
+            try
+            {
+                if (_dbConnection.State != ConnectionState.Open) await _dbConnection.OpenAsync();
+
+                await _dbConnection.ExecuteAsync(sql, filas);
+
+                return Resultado.Ok();
+            }
+            catch (Exception ex)
+            {
+                return Resultado.Fallo(ex);
+            }
+        }
 
         private async Task<Resultado> EjecutarCargaMasivaAsync(string nombreTabla, DataTable datos)
         {

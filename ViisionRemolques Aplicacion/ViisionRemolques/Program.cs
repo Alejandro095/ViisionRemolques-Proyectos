@@ -26,6 +26,11 @@ builder.Services.AddOptions<CentraliaSettings>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services.AddOptions<PathsSettings>()
+    .Bind(builder.Configuration.GetSection("Paths"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddHttpClient("IsapiCameraClient")
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {

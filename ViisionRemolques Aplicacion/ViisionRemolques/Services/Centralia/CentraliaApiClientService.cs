@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using ViisionRemolques.Settings;
+using ViisionRemolques.Utils;
 
 namespace ViisionRemolques.Services.Centralia
 {
@@ -40,6 +41,37 @@ namespace ViisionRemolques.Services.Centralia
         public async Task<TResponse> DeleteAsync<TResponse>(string endpoint)
         {
             return await SendAsync<TResponse>(endpoint, Method.Delete, null);
+        }
+
+        public async Task<Resultado> DescargarArchivoAsync(string pathCentral, string rutaDestinoTmp)
+        {
+            try
+            {
+                await AsegurarTokenValidoAsync();
+
+                var url = _centraliaSettings.GetApiFullUrl(pathCentral);
+
+                var request = new RestRequest(url, Method.Get);
+
+                request.AddHeader("Authorization", $"Bearer {_tokenActual}");
+
+                using var stream = await _client.DownloadStreamAsync(request);
+
+                if (stream is null)
+                    return Resultado.Fallo($"No se pudo descargar el archivo: {pathCentral}");
+
+                using var fileStream = new FileStream(
+                    rutaDestinoTmp, FileMode.Create, FileAccess.Write, FileShare.None,
+                    bufferSize: 81920, useAsync: true);
+
+                await stream.CopyToAsync(fileStream);
+
+                return Resultado.Ok();
+            }
+            catch (Exception ex)
+            {
+                return Resultado.Fallo($"Excepción al descargar {pathCentral}: {ex}");
+            }
         }
 
         private async Task<TResponse> SendAsync<TResponse>(string endpoint, Method method, object? payload)

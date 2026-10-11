@@ -1,17 +1,19 @@
-﻿namespace ViisionRemolques.Services
+﻿using ViisionRemolques.Utils;
+
+namespace ViisionRemolques.Services
 {
-    public class AlmacenamientoImagenesService
+    public class AlmacenamientoService
     {
 
-        private readonly string _basePath;
+        private readonly PathsService _pathsService;
 
-        public AlmacenamientoImagenesService(IWebHostEnvironment environment)
+        public AlmacenamientoService(PathsService pathsService)
         {
 
-            _basePath = Path.Combine(environment.ContentRootPath, "Archivos/Imagenes");
+            _pathsService = pathsService;
         }
 
-        public async Task<List<string>> Guardar(List<byte[]> imagenes, string extension = ".jpg", CancellationToken cancellationToken = default)
+        public async Task<List<string>> GuardarImagen(List<byte[]> imagenes, string extension = ".jpg", CancellationToken cancellationToken = default)
         {
             var rutasGuardadas = new List<string>();
 
@@ -25,9 +27,8 @@
 
             var hoy = DateTime.UtcNow;
 
-            // Construir carpeta con jerarquía: {ContentRootPath}/{subcarpeta}/{yyyy}/{MM}/{dd}
             var carpetaDestino = Path.Combine(
-                _basePath,
+                _pathsService.GetImagenesPath(),
                 hoy.ToString("yyyy"),
                 hoy.ToString("MM"),
                 hoy.ToString("dd")

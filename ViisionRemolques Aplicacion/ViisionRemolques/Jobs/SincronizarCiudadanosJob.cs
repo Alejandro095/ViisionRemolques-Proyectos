@@ -1,5 +1,6 @@
 ﻿using ViisionRemolques.Filters.Hangfire;
 using ViisionRemolques.Repositories;
+using ViisionRemolques.Services;
 using ViisionRemolques.Services.Centralia.Endpoints;
 
 namespace ViisionRemolques.Jobs
@@ -7,32 +8,33 @@ namespace ViisionRemolques.Jobs
     [UniqueExecution]
     public class SincronizarCiudadanosJob
     {
-        private readonly CiudadanosReportadosEndpoint _ciudadanosReportadosEndpoint;
-        private readonly CiudadanosRepository _ciudadanosRepository;
+        private readonly CiudadanosService _ciudadanosReportadosService;
+        private readonly FDLibSyncService _fdLibSyncService;
 
-        public SincronizarCiudadanosJob(CiudadanosReportadosEndpoint ciudadanosReportadosEndpoint, CiudadanosRepository ciudadanosRepository)
+        public SincronizarCiudadanosJob(CiudadanosService ciudadanosReportadosService, FDLibSyncService fdLibSyncService)
         {
-            _ciudadanosReportadosEndpoint = ciudadanosReportadosEndpoint;
-            _ciudadanosRepository = ciudadanosRepository;
+            _ciudadanosReportadosService = ciudadanosReportadosService;
+            _fdLibSyncService = fdLibSyncService;
         }
 
         public async Task Run()
         {
-            var ciudadanos =  await _ciudadanosReportadosEndpoint.Obtener();
+            // Descagar ciudadanos reportados
+            var syncCiudadanos = await _ciudadanosReportadosService.SincronizarCiudadanosReportados();
+            if (!syncCiudadanos.Exito) syncCiudadanos.LanzarErrorSiFalla();
 
-            ciudadanos.LanzarErrorSiFalla();
+            // Descargar registros asignados a un ciudadano reportado de imagenes
+            var syncCiudadanosImagenes = await _ciudadanosReportadosService.SincronizarCiudadanosReportadosImagenes();
+            if (!syncCiudadanosImagenes.Exito) syncCiudadanosImagenes.LanzarErrorSiFalla();
 
-            var insert = await _ciudadanosRepository.Actualizar(ciudadanos.Valor!.Datos);
 
-            insert.LanzarErrorSiFalla();
+            // Procesar la tabla de estado actual de la imagenes
+            var syncDiferenciasRostros = await _ciudadanosReportadosService.ProcesarDiferenciasAsync();
+            if (!syncDiferenciasRostros.Exito) syncDiferenciasRostros.LanzarErrorSiFalla();
 
-            var ciudadanosImagenes = await _ciudadanosReportadosEndpoint.ObtenerImagenes();
-
-            ciudadanosImagenes.LanzarErrorSiFalla();
-
-            var insertImagenes = await _ciudadanosRepository.ActualizarImagenes(ciudadanosImagenes.Valor!);
-
-            insertImagenes.LanzarErrorSiFalla();
+            // Ejecutar batch de operaciones pendientes de imagenes
+            var syncDiferenciasRostrosCamara = await _fdLibSyncService.SincronizarAsync();
+            if (!syncDiferenciasRostrosCamara.Exito) syncDiferenciasRostrosCamara.LanzarErrorSiFalla();
         }
     }
 }

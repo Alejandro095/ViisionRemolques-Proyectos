@@ -42,7 +42,6 @@ CREATE TABLE Camaras (
     Soporta_PtzZoom                     BIT NOT NULL DEFAULT 0,
     Soporta_PtzEnfoque                  BIT NOT NULL DEFAULT 0,
     Soporta_PtzIris                     BIT NOT NULL DEFAULT 0,
-    Soporta_PtzLuz                      BIT NOT NULL DEFAULT 0,
     Soporta_PtzEscobilla                BIT NOT NULL DEFAULT 0,
     Soporta_PtzEnfoqueAuxiliar          BIT NOT NULL DEFAULT 0,
     Soporta_PtzInicializacionObjetivo   BIT NOT NULL DEFAULT 0,
@@ -233,7 +232,7 @@ CREATE TABLE EventoDetallesAlarmaRecuentoPersonas (
     CantidadPersonas                    INT NULL,
     NivelDensidad                       INT NULL,
     NombreNivelDensidad                 NVARCHAR(100) NULL,
-    DireccionCambioDensidad             NVARCHAR(100) NULL
+    DireccionCambioDensidad             NVARCHAR(100) NULL,
 
     CONSTRAINT FK_EventoDetallesAlarmaRecuentoPersonas_Eventos
         FOREIGN KEY (EventoIdInterno)
@@ -343,7 +342,7 @@ CREATE TABLE EventoDetallesDeteccionTipoMultiobjetivo(
     VehiculoMatricula                   NVARCHAR(100) NULL,
     VehiculoTipo                        NVARCHAR(100) NULL,
     VehiculoColor                       NVARCHAR(100) NULL,
-    VehiculoLogo                        NVARCHAR(100) NULL
+    VehiculoLogo                        NVARCHAR(100) NULL,
 
     CONSTRAINT FK_EventoDetallesDeteccionTipoMultiobjetivo_Eventos
         FOREIGN KEY (EventoIdInterno)
@@ -442,8 +441,8 @@ CREATE TABLE CiudadanosReportados (
     IFE                                 NVARCHAR(50) NULL,
     Mensaje                             NVARCHAR(MAX) NULL,
     Accion                              NVARCHAR(MAX) NULL,
-    AltoRiesgo                          BIT NOT NULL DEFAULT 0,
-    Activo                              BIT NOT NULL DEFAULT 0,
+    AltoRiesgo                          BIT NULL,
+    Activo                              BIT NULL,
     FechaCreacion                       DATETIME NULL,
     FechaModificacion                   DATETIME NULL
 );
@@ -458,14 +457,37 @@ CREATE TABLE CiudadanosReportadosImagenes (
     IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
     IdExterno                           BIGINT NOT NULL,
     CiudadanoIdExterno                  BIGINT NOT NULL,
-    Path                                NVARCHAR(MAX) NULL,
-    Hash                                NVARCHAR(1000) NULL,
-    Activo                              BIT NOT NULL DEFAULT 0,
-    FechaCreacion                       DATETIME,
-    FechaModificacion                   DATETIME,
+    Path                                NVARCHAR(MAX) NOT NULL,
+    Hash                                NVARCHAR(1000) NOT NULL,
+    Activo                              BIT NULL,
+    FechaCreacion                       DATETIME NULL,
+    FechaModificacion                   DATETIME NULL
 );
 GO
 
 CREATE NONCLUSTERED INDEX IX_CiudadanosReportadosImagenes_IdExterno
 ON CiudadanosReportadosImagenes (IdExterno);
 GO
+
+
+CREATE TABLE CiudadanosReportadosFotosEstado (
+    ImagenIdExterno          BIGINT PRIMARY KEY,
+    CiudadanoIdExterno       BIGINT NOT NULL,
+    Hash                     NVARCHAR(1000) NOT NULL,
+    RutaArchivoLocal         NVARCHAR(260) NOT NULL,
+    FechaDescargaFotoLocal   DATETIME2 NOT NULL
+);
+
+
+CREATE TABLE FDLibSyncState (
+    ImagenIdExterno      BIGINT PRIMARY KEY,
+    CiudadanoIdExterno   BIGINT NOT NULL,
+    Accion               NVARCHAR(20) NOT NULL,
+    Estado               NVARCHAR(20) NOT NULL DEFAULT 'Pendiente',
+    Pid                  NVARCHAR(50) NULL,
+    HashContenido        NVARCHAR(1000) NULL,
+    IntentosFallidos     INT NOT NULL DEFAULT 0,
+    UltimoError          NVARCHAR(500) NULL,
+    FechaActualizacion   DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+

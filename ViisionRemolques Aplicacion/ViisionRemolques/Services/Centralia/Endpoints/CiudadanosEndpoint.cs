@@ -3,11 +3,11 @@ using ViisionRemolques.Utils;
 
 namespace ViisionRemolques.Services.Centralia.Endpoints
 {
-    public class CiudadanosReportadosEndpoint
+    public class CiudadanosEndpoint
     {
         private readonly CentraliaApiClientService _centraliaApiClientService;
 
-        public CiudadanosReportadosEndpoint(CentraliaApiClientService centraliaApiClientService)
+        public CiudadanosEndpoint(CentraliaApiClientService centraliaApiClientService)
         {
             _centraliaApiClientService = centraliaApiClientService;
         }
@@ -46,10 +46,10 @@ namespace ViisionRemolques.Services.Centralia.Endpoints
     public class CiudadanoReportadoImagen
     {
         [JsonPropertyName("idDatCiudadanoRostro")]
-        public long IdExterno { get; set; }
+        public long? IdExterno { get; set; }
 
         [JsonPropertyName("idDatCiudadanoReportado")]
-        public long CiudadanoIdExterno { get; set; }
+        public long? CiudadanoIdExterno { get; set; }
 
         [JsonPropertyName("imagenPath")]
         public string? Path { get; set; }
@@ -58,31 +58,31 @@ namespace ViisionRemolques.Services.Centralia.Endpoints
         public string? Hash { get; set; }
 
         [JsonPropertyName("fechaCreacion")]
-        public DateTime FechaCreacion { get; set; }
+        public DateTime? FechaCreacion { get; set; } = DateTime.Now;
 
         [JsonPropertyName("fechaModificacion")]
-        public DateTime FechaModificacion { get; set; }
+        public DateTime? FechaModificacion { get; set; } = DateTime.Now;
 
         [JsonPropertyName("activo")]
-        public bool Activo { get; set; }
+        public bool? Activo { get; set; } = true;
     }
 
     public class CiudadanoReportadoRespuesta
     {
         [JsonPropertyName("fechaGlobal")]
-        public DateTime FechaGlobal { get; set; }
+        public DateTime? FechaGlobal { get; set; } = DateTime.MinValue;
 
         [JsonPropertyName("novedades")]
-        public bool Novedades { get; set; }
+        public bool? Novedades { get; set; } = true;
 
         [JsonPropertyName("datos")]
-        public List<CiudadanoReportado> Datos { get; set; } = new();
+        public List<CiudadanoReportado>? Datos { get; set; } = new();
     }
 
     public class CiudadanoReportado
     {
         [JsonPropertyName("idDatCiudadanoReportado")]
-        public long IdExterno { get; set; }
+        public long? IdExterno { get; set; }
 
         [JsonPropertyName("nombre")]
         public string? Nombre { get; set; }
@@ -97,7 +97,7 @@ namespace ViisionRemolques.Services.Centralia.Endpoints
         public string? Sexo { get; set; }
 
         [JsonPropertyName("fechaNacimiento")]
-        public DateTime FechaNacimiento { get; set; }
+        public DateTime? FechaNacimiento { get; set; }
 
         [JsonPropertyName("rfc")]
         public string? RFC { get; set; }
@@ -115,15 +115,15 @@ namespace ViisionRemolques.Services.Centralia.Endpoints
         public string? Accion { get; set; }
 
         [JsonPropertyName("activo")]
-        public bool Activo { get; set; }
+        public bool? Activo { get; set; } = true;
 
         [JsonPropertyName("fechaCreacion")]
-        public DateTime? FechaCreacion { get; set; }
+        public DateTime? FechaCreacion { get; set; } = DateTime.Now;
 
         [JsonPropertyName("fechaModificacion")]
-        public DateTime? FechaModificacion { get; set; }
+        public DateTime? FechaModificacion { get; set; } = DateTime.Now;
 
         [JsonPropertyName("altoRiesgo")]
-        public bool AltoRiesgo { get; set; }
+        public bool? AltoRiesgo { get; set; } = false;
     }
 }

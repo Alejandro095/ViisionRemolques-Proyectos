@@ -9,7 +9,7 @@ namespace ViisionRemolques.Jobs
     public class EventosWebhookJob
     {
         private readonly ILogger<EventosWebhookJob> _logger;
-        private readonly AlmacenamientoImagenesService _almacenamientoImagenesService;
+        private readonly AlmacenamientoService _almacenamientoImagenesService;
 
 
         private readonly EventoSmartRepository _eventoSmartRepository;
@@ -23,7 +23,7 @@ namespace ViisionRemolques.Jobs
 
         public EventosWebhookJob(
             ILogger<EventosWebhookJob> logger,
-            AlmacenamientoImagenesService almacenamientoImagenesService,
+            AlmacenamientoService almacenamientoImagenesService,
             EventoSmartRepository eventoSmartRepository,
             EventoAlarmaRecuentoPersonasRepository eventoAlarmaRecuentoPersonasRepository,
             EventoANPRRepository eventoANPRRepository,

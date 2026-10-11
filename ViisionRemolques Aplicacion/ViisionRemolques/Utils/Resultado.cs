@@ -52,17 +52,6 @@
         {
             if (!Exito) throw ObtenerExcepcion()!;
         }
-        public string? ObtenerMensajeSeguro(string mensajePorDefecto = "Ocurrió un error inesperado. Intente más tarde.")
-        {
-            if (Exito) return null;
-
-            if (Tipo == TipoError.Usuario)
-            {
-                return Error;
-            }
-
-            return mensajePorDefecto;
-        }
     }
 
     public readonly struct Resultado
@@ -108,17 +97,6 @@
         public void LanzarErrorSiFalla()
         {
             if (!Exito) throw ObtenerExcepcion()!;
-        }
-        public string? ObtenerMensajeSeguro(string mensajePorDefecto = "Ocurrió un error inesperado. Intente más tarde.")
-        {
-            if (Exito) return null;
-
-            if (Tipo == TipoError.Usuario)
-            {
-                return Error;
-            }
-
-            return mensajePorDefecto;
         }
     }
 }

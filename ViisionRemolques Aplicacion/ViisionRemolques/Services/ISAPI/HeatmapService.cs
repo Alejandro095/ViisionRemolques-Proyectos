@@ -9,14 +9,14 @@ namespace ViisionRemolques.Services.ISAPI
     public class HeatmapService
     {
         private readonly IsapiClientFactoryService _isapiClientFactoryService;
-        private readonly AlmacenamientoImagenesService _almacenamientoImagenesService;
+        private readonly AlmacenamientoService _almacenamientoService;
 
         public HeatmapService(
             IsapiClientFactoryService isapiClientFactoryService,
-            AlmacenamientoImagenesService almacenamientoImagenesService)
+            AlmacenamientoService almacenamientoService)
         {
             _isapiClientFactoryService = isapiClientFactoryService;
-            _almacenamientoImagenesService = almacenamientoImagenesService;
+            _almacenamientoService = almacenamientoService;
         }
 
         public readonly string[] tiposReportesValidos = ["daily", "weekly", "monthly", "yearly"];
@@ -66,7 +66,7 @@ namespace ViisionRemolques.Services.ISAPI
                 if (!imagenResultado.Exito)
                     return Resultado<HeatmapInformacion>.Fallo(imagenResultado.Error ?? $"Error al descargar el heatmap ({camara?.IP ?? "IP no especificada"})");
 
-                var imagenPath = await _almacenamientoImagenesService.Guardar(new List<byte[]>
+                var imagenPath = await _almacenamientoService.GuardarImagen(new List<byte[]>
                 {
                     imagenResultado.Valor!
                 }, cancellationToken: ct);
