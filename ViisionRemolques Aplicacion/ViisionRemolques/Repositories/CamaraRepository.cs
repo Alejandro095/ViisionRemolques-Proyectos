@@ -14,6 +14,27 @@ namespace ViisionRemolques.Repositories
             _dbConnection = dbConnection;
         }
 
+        public async Task<CamaraEntity?> ObtenerCamaraCompatibleReconocimientoFacial()
+        {
+            var camaras = await ObtenerPorModeloAsync("DS-2DF8C842IXG1-ELWY"); // PTZ
+
+            return camaras.FirstOrDefault();
+        }
+
+        public async Task<CamaraEntity?> ObtenerCamaraCompatibleHeatmap()
+        {
+            var camaras = await ObtenerPorModeloAsync("DS-2CD6365G1-IVS"); // Ojo pez
+
+            return camaras.FirstOrDefault();
+        }
+
+        public async Task<CamaraEntity?> ObtenerCamaraCompatibleInterseccion()
+        {
+            var camaras = await ObtenerPorModeloAsync("DS-2CD6365G1-IVS"); //Ojo pez
+
+            return camaras.FirstOrDefault();
+        }
+
         public async Task<IEnumerable<CamaraEntity>> ObtenerTodasAsync()
         {
             const string sql = @"
@@ -70,6 +91,35 @@ namespace ViisionRemolques.Repositories
                   AND Activo = 1;";
 
             return await _dbConnection.QueryFirstOrDefaultAsync<CamaraEntity>(sql, new { IdInterno = idInterno });
+        }
+
+        public async Task<IEnumerable<CamaraEntity?>> ObtenerPorModeloAsync(string modelo)
+        {
+            const string sql = @"
+                SELECT TOP 1
+                    IdInterno,
+                    Nombre,
+                    Modelo,
+                    Activo,
+                    IP,
+                    Go2Rtc,
+                    PlataformaVCA,
+                    Digest_Usuario,
+                    Digest_Contrasena,
+                    Soporta_AudioBidireccional,
+                    Soporta_PtzMovimiento,
+                    Soporta_PtzZoom,
+                    Soporta_PtzEnfoque,
+                    Soporta_PtzIris,
+                    Soporta_PtzEscobilla,
+                    Soporta_PtzEnfoqueAuxiliar,
+                    Soporta_PtzInicializacionObjetivo,
+                    Soporta_PtzCalibracionZoom
+                FROM Camaras
+                WHERE Modelo = @Modelo
+                  AND Activo = 1;";
+
+            return await _dbConnection.QueryAsync<CamaraEntity>(sql, new { Modelo = modelo });
         }
     }
 

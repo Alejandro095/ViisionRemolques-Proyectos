@@ -41,6 +41,7 @@ namespace ViisionRemolques
             services.AddScoped<FDLibSyncStateRepository>();
 
             services.AddScoped<CiudadanosRepository>();
+            services.AddScoped<CatalogosVersionesRepository>();
 
             return services;
         }

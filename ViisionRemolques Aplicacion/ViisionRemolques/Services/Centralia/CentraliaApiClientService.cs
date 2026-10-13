@@ -23,31 +23,31 @@ namespace ViisionRemolques.Services.Centralia
             _client = new RestClient(httpClient, options);
         }
 
-        public async Task<TResponse> GetAsync<TResponse>(string endpoint)
+        public async Task<TResponse> GetAsync<TResponse>(string endpoint, CancellationToken ct = default)
         {
-            return await SendAsync<TResponse>(endpoint, Method.Get, null);
+            return await SendAsync<TResponse>(endpoint, Method.Get, null, ct);
         }
 
-        public async Task<TResponse> PostAsync<TResponse>(string endpoint, object? payload = null)
+        public async Task<TResponse> PostAsync<TResponse>(string endpoint, object? payload = null, CancellationToken ct = default)
         {
-            return await SendAsync<TResponse>(endpoint, Method.Post, payload);
+            return await SendAsync<TResponse>(endpoint, Method.Post, payload, ct);
         }
 
-        public async Task<TResponse> PutAsync<TResponse>(string endpoint, object? payload = null)
+        public async Task<TResponse> PutAsync<TResponse>(string endpoint, object? payload = null, CancellationToken ct = default)
         {
-            return await SendAsync<TResponse>(endpoint, Method.Put, payload);
+            return await SendAsync<TResponse>(endpoint, Method.Put, payload, ct);
         }
 
-        public async Task<TResponse> DeleteAsync<TResponse>(string endpoint)
+        public async Task<TResponse> DeleteAsync<TResponse>(string endpoint, CancellationToken ct = default)
         {
-            return await SendAsync<TResponse>(endpoint, Method.Delete, null);
+            return await SendAsync<TResponse>(endpoint, Method.Delete, null, ct);
         }
 
-        public async Task<Resultado> DescargarArchivoAsync(string pathCentral, string rutaDestinoTmp)
+        public async Task<Resultado> DescargarArchivoAsync(string pathCentral, string rutaDestinoTmp, CancellationToken ct = default)
         {
             try
             {
-                await AsegurarTokenValidoAsync();
+                await AsegurarTokenValidoAsync(ct);
 
                 var url = _centraliaSettings.GetApiFullUrl(pathCentral);
 
@@ -55,7 +55,7 @@ namespace ViisionRemolques.Services.Centralia
 
                 request.AddHeader("Authorization", $"Bearer {_tokenActual}");
 
-                using var stream = await _client.DownloadStreamAsync(request);
+                using var stream = await _client.DownloadStreamAsync(request, ct);
 
                 if (stream is null)
                     return Resultado.Fallo($"No se pudo descargar el archivo: {pathCentral}");
@@ -64,7 +64,7 @@ namespace ViisionRemolques.Services.Centralia
                     rutaDestinoTmp, FileMode.Create, FileAccess.Write, FileShare.None,
                     bufferSize: 81920, useAsync: true);
 
-                await stream.CopyToAsync(fileStream);
+                await stream.CopyToAsync(fileStream, ct);
 
                 return Resultado.Ok();
             }
@@ -74,9 +74,9 @@ namespace ViisionRemolques.Services.Centralia
             }
         }
 
-        private async Task<TResponse> SendAsync<TResponse>(string endpoint, Method method, object? payload)
+        private async Task<TResponse> SendAsync<TResponse>(string endpoint, Method method, object? payload, CancellationToken ct)
         {
-            await AsegurarTokenValidoAsync();
+            await AsegurarTokenValidoAsync(ct);
 
             var url = _centraliaSettings.GetApiFullUrl(endpoint);
             var request = new RestRequest(url, method);
@@ -93,7 +93,7 @@ namespace ViisionRemolques.Services.Centralia
                 request.AddStringBody(jsonNode.ToString(), DataFormat.Json);
             }
 
-            var response = await _client.ExecuteAsync<ApiResponse<TResponse>>(request);
+            var response = await _client.ExecuteAsync<ApiResponse<TResponse>>(request, ct);
 
             if (response.IsSuccessful && response.Data != null && !response.Data.Error)
             {
@@ -106,18 +106,18 @@ namespace ViisionRemolques.Services.Centralia
             throw new Exception($"Error en {endpoint} ({method}): {response.Data?.Message ?? response.ErrorMessage}");
         }
 
-        private async Task AsegurarTokenValidoAsync()
+        private async Task AsegurarTokenValidoAsync(CancellationToken ct)
         {
             if (!string.IsNullOrEmpty(_tokenActual) && DateTime.UtcNow < _fechaExpiracionToken.AddMinutes(-1))
                 return;
 
-            await _semaforoToken.WaitAsync();
+            await _semaforoToken.WaitAsync(ct);
             try
             {
                 if (!string.IsNullOrEmpty(_tokenActual) && DateTime.UtcNow < _fechaExpiracionToken.AddMinutes(-1))
                     return;
 
-                await RenovarTokenAsync();
+                await RenovarTokenAsync(ct);
             }
             finally
             {
@@ -125,7 +125,7 @@ namespace ViisionRemolques.Services.Centralia
             }
         }
 
-        private async Task RenovarTokenAsync()
+        private async Task RenovarTokenAsync(CancellationToken ct)
         {
             if (string.IsNullOrEmpty(_centraliaSettings.Usuario) || string.IsNullOrEmpty(_centraliaSettings.Secreto))
                 throw new InvalidOperationException("Credenciales no configuradas en CentraliaSettings.");
@@ -140,7 +140,7 @@ namespace ViisionRemolques.Services.Centralia
                 idCatUsuarioTipo = 0
             });
 
-            var response = await _client.ExecuteAsync<ApiResponse<LoginDataResponse>>(request);
+            var response = await _client.ExecuteAsync<ApiResponse<LoginDataResponse>>(request, ct);
 
             if (response.IsSuccessful && response.Data != null && !response.Data.Error)
             {

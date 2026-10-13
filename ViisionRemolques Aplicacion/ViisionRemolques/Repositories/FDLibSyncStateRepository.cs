@@ -14,7 +14,35 @@ namespace ViisionRemolques.Repositories
             _dbConnection = dbConnection;
         }
 
-        public record FDLibPendiente(long ImagenIdExterno, long CiudadanoIdExterno, string Accion, string? Pid, int IntentosFallidos, string? RutaArchivoLocal, string? Hash, string? Nombre, string? ApellidoPaterno, string? ApellidoMaterno);
+        public async Task<Resultado<IEnumerable<FDLibPendiente>>> ObtenerDiferenciasProcesadas()
+        {
+            var result = await ProcesarDiferencias();
+
+            if (!result.Exito) return Resultado<IEnumerable<FDLibPendiente>>.Fallo(result.Error!);
+
+            return await ObtenerDiferencias();
+        }
+
+        public record FDLibSincronizado(long ImagenIdExterno, long CiudadanoIdExterno);
+        public async Task<Resultado<IEnumerable<FDLibSincronizado>>> ObtenerSincronizadosAsync()
+        {
+            const string sql = @"SELECT ImagenIdExterno, CiudadanoIdExterno FROM FDLibSyncState WHERE Sincronizado = 1;";
+
+            try
+            {
+                if (_dbConnection.State != ConnectionState.Open) await _dbConnection.OpenAsync();
+
+                var filas = await _dbConnection.QueryAsync<FDLibSincronizado>(sql);
+
+                return Resultado<IEnumerable<FDLibSincronizado>>.Ok(filas);
+            }
+            catch (Exception ex)
+            {
+                return Resultado<IEnumerable<FDLibSincronizado>>.Fallo(ex);
+            }
+        }
+
+        public record FDLibPendiente(long ImagenIdExterno, long CiudadanoIdExterno, string Accion, bool Sincronizado, int IntentosFallidos, string? RutaArchivoLocal, string? Hash, string? Nombre, string? ApellidoPaterno, string? ApellidoMaterno);
         public async Task<Resultado<IEnumerable<FDLibPendiente>>> ObtenerDiferencias()
         {
             const string sql = @"
@@ -22,7 +50,7 @@ namespace ViisionRemolques.Repositories
                 s.ImagenIdExterno,
                 s.CiudadanoIdExterno,
                 s.Accion,
-                s.Pid,
+                s.Sincronizado,
                 s.IntentosFallidos,
                 pf.RutaArchivoLocal,
                 pf.Hash,
@@ -57,7 +85,7 @@ namespace ViisionRemolques.Repositories
                     SELECT
                         s.ImagenIdExterno,
                         s.CiudadanoIdExterno,
-                        CASE WHEN s.Pid IS NOT NULL THEN 'Borrar' ELSE 'LimpiarLocal' END AS Accion
+                        CASE WHEN s.Sincronizado = 1 THEN 'Borrar' ELSE 'LimpiarLocal' END AS Accion
                     FROM FDLibSyncState s
                     LEFT JOIN CiudadanosReportadosFotosEstado pf ON pf.ImagenIdExterno = s.ImagenIdExterno
                     WHERE pf.ImagenIdExterno IS NULL
@@ -75,10 +103,10 @@ namespace ViisionRemolques.Repositories
                 ) AS origen ON destino.ImagenIdExterno = origen.ImagenIdExterno
                 WHEN MATCHED AND origen.Accion = 'LimpiarLocal' THEN DELETE
                 WHEN MATCHED THEN UPDATE SET
-                    Accion = origen.Accion, Estado = 'Pendiente', FechaActualizacion = SYSUTCDATETIME()
+                    Accion = origen.Accion, Estado = 'Pendiente', FechaActualizacion = GETDATE()
                 WHEN NOT MATCHED BY TARGET THEN
                     INSERT (ImagenIdExterno, CiudadanoIdExterno, Accion, Estado, FechaActualizacion)
-                    VALUES (origen.ImagenIdExterno, origen.CiudadanoIdExterno, origen.Accion, 'Pendiente', SYSUTCDATETIME());";
+                    VALUES (origen.ImagenIdExterno, origen.CiudadanoIdExterno, origen.Accion, 'Pendiente', GETDATE());";
 
             try
             {
@@ -94,15 +122,15 @@ namespace ViisionRemolques.Repositories
             }
         }
 
-        public record FDLibExito(long ImagenIdExterno, string Pid, string Hash);
+        public record FDLibExito(long ImagenIdExterno, string Hash);
         public record FDLibError(long ImagenIdExterno, string UltimoError);
 
         public async Task<Resultado> MarcarSincronizadoAsync(FDLibExito fila)
         {
             const string sql = @"
                 UPDATE FDLibSyncState SET
-                    Estado = 'Sincronizado', Pid = @Pid, HashContenido = @Hash,
-                    IntentosFallidos = 0, UltimoError = NULL, FechaActualizacion = SYSUTCDATETIME()
+                    Estado = 'Sincronizado', Sincronizado = 1, HashContenido = @Hash,
+                    IntentosFallidos = 0, UltimoError = NULL, FechaActualizacion = GETDATE()
                 WHERE ImagenIdExterno = @ImagenIdExterno;";
 
             try
@@ -142,7 +170,7 @@ namespace ViisionRemolques.Repositories
             const string sql = @"
                 UPDATE FDLibSyncState SET
                     Estado = 'Error', IntentosFallidos = IntentosFallidos + 1,
-                    UltimoError = @UltimoError, FechaActualizacion = SYSUTCDATETIME()
+                    UltimoError = @UltimoError, FechaActualizacion = GETDATE()
                 WHERE ImagenIdExterno = @ImagenIdExterno;";
 
             try

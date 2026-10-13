@@ -478,16 +478,21 @@ CREATE TABLE CiudadanosReportadosFotosEstado (
     FechaDescargaFotoLocal   DATETIME2 NOT NULL
 );
 
+CREATE TABLE CatalogosVersiones (
+    Catalogo                            INT NOT NULL PRIMARY KEY,
+    Version                             NVARCHAR(200) NULL,
+);
+
 
 CREATE TABLE FDLibSyncState (
     ImagenIdExterno      BIGINT PRIMARY KEY,
     CiudadanoIdExterno   BIGINT NOT NULL,
     Accion               NVARCHAR(20) NOT NULL,
     Estado               NVARCHAR(20) NOT NULL DEFAULT 'Pendiente',
-    Pid                  NVARCHAR(50) NULL,
+    Sincronizado         BIT NOT NULL DEFAULT 0,
     HashContenido        NVARCHAR(1000) NULL,
     IntentosFallidos     INT NOT NULL DEFAULT 0,
     UltimoError          NVARCHAR(500) NULL,
-    FechaActualizacion   DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+    FechaActualizacion   DATETIME2 NOT NULL DEFAULT GETDATE()
 );
 

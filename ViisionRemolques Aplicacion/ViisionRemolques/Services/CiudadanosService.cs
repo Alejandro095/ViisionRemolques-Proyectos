@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using ViisionRemolques.Enums;
 using ViisionRemolques.Repositories;
 using ViisionRemolques.Services.Centralia;
 using ViisionRemolques.Services.Centralia.Endpoints;
@@ -14,53 +15,78 @@ namespace ViisionRemolques.Services
         private readonly CiudadanosRepository _ciudadanosRepository;
         private readonly PathsService _pathsService;
         private readonly CentraliaApiClientService _centraliaApiClientService;
+        private readonly CatalogosVersionesRepository _catalogosVersionesRepository;
 
         public CiudadanosService(
             CiudadanosEndpoint ciudadanosReportadosEndpoint, 
             CiudadanosRepository ciudadanosRepository, 
             PathsService pathsService,
-            CentraliaApiClientService centraliaApiClientService)
+            CentraliaApiClientService centraliaApiClientService,
+            CatalogosVersionesRepository catalogosVersionesRepository)
         {
             _ciudadanosReportadosEndpoint = ciudadanosReportadosEndpoint;
             _ciudadanosRepository = ciudadanosRepository;
             _pathsService = pathsService;
             _centraliaApiClientService = centraliaApiClientService;
+            _catalogosVersionesRepository = catalogosVersionesRepository;
         }
 
         public async Task<Resultado> SincronizarCiudadanosReportados()
         {
-            var ciudadanos = await _ciudadanosReportadosEndpoint.Obtener();
+            var versionCatalogo = await _catalogosVersionesRepository.ObtenerAsync(CatalogoVersionEnum.Ciudadanos);
+
+            string? version = null;
+
+            if (versionCatalogo.Exito && !string.IsNullOrWhiteSpace(versionCatalogo.Valor!.Version)) version = versionCatalogo.Valor!.Version;
+
+            var ciudadanos = await _ciudadanosReportadosEndpoint.Obtener(version: version);
 
             if (!ciudadanos.Exito) return Resultado.Fallo(ciudadanos.Error!);
 
             if (ciudadanos.Valor is null || ciudadanos.Valor.Datos is null)
                 return Resultado.Fallo("El payload del endpoint de ciudadanos blacklist viene incorrecto.");
 
-            var sqlRresultado = await _ciudadanosRepository.Actualizar(ciudadanos.Valor.Datos);
+            if (ciudadanos.Valor.Novedades == true)
+            {
+                var sqlRresultado = await _ciudadanosRepository.Actualizar(ciudadanos.Valor.Datos);
 
-            if (!sqlRresultado.Exito) return Resultado.Fallo(sqlRresultado.Error!);
+                if (!sqlRresultado.Exito) return Resultado.Fallo(sqlRresultado.Error!);
+
+                await _catalogosVersionesRepository.ActualizarVersionAsync(CatalogoVersionEnum.Ciudadanos, ciudadanos.Valor.FechaGlobal);
+            }
 
             return Resultado.Ok();
         }
 
-        public async Task<Resultado> SincronizarCiudadanosReportadosImagenes(CancellationToken ct = default)
+        public async Task<Resultado> SincronizarCiudadanosReportadosImagenes()
         {
-            var ciudadanos = await _ciudadanosReportadosEndpoint.ObtenerImagenes();
+            var versionCatalogo = await _catalogosVersionesRepository.ObtenerAsync(CatalogoVersionEnum.CiudadanosRostros);
+
+            string? version = null;
+
+            if (versionCatalogo.Exito && !string.IsNullOrWhiteSpace(versionCatalogo.Valor!.Version)) version = versionCatalogo.Valor!.Version;
+
+            var ciudadanos = await _ciudadanosReportadosEndpoint.ObtenerImagenes(version: version);
 
             if (!ciudadanos.Exito) return Resultado.Fallo(ciudadanos.Error!);
 
             if (ciudadanos.Valor is null)
                 return Resultado.Fallo("El payload del endpoint de ciudadanos imagenes blacklist viene incorrecto.");
 
-            var insert = await _ciudadanosRepository.ActualizarImagenes(ciudadanos.Valor);
+            if (ciudadanos.Valor?.Novedades == true)
+            {
+                var insert = await _ciudadanosRepository.ActualizarImagenes(ciudadanos.Valor?.Datos);
 
-            if (!insert.Exito) return Resultado.Fallo(insert.Error!);
+                if (!insert.Exito) return Resultado.Fallo(insert.Error!);
+
+                await _catalogosVersionesRepository.ActualizarVersionAsync(CatalogoVersionEnum.CiudadanosRostros, ciudadanos.Valor?.FechaGlobal);
+            }
 
             return Resultado.Ok();
         }
 
 
-        public async Task<Resultado> ProcesarDiferenciasAsync(CancellationToken ct = default)
+        public async Task<Resultado> ProcesarDiferenciasAsync()
         {
             var accionesResultado = await _ciudadanosRepository.ObtenerDiferencias();
             if (!accionesResultado.Exito) return Resultado.Fallo(accionesResultado.Error!);

@@ -27,12 +27,15 @@ namespace ViisionRemolques.Services.Centralia.Endpoints
             }
         }
 
-        public async Task<Resultado<CiudadanoReportadoImagenRespuesta>> ObtenerImagenes()
+        public async Task<Resultado<CiudadanoReportadoImagenRespuesta>> ObtenerImagenes(string? version = null)
         {
             try
             {
                 return Resultado<CiudadanoReportadoImagenRespuesta>.Ok(
-                    await _centraliaApiClientService.GetAsync<CiudadanoReportadoImagenRespuesta>($"/Autonomo/CiudadanoRostro"));
+                    await _centraliaApiClientService.PostAsync<CiudadanoReportadoImagenRespuesta>($"/Autonomo/CiudadanoRostro/Obtener_RostrosBlacklist", new
+                    {
+                        fecha_Actualizacion = version,
+                    }));
             }
             catch (Exception excepcion)
             {
@@ -41,9 +44,19 @@ namespace ViisionRemolques.Services.Centralia.Endpoints
         }
     }
 
-    public class CiudadanoReportadoImagenRespuesta : List<CiudadanoReportadoImagen>;
+    public class CiudadanoReportadoImagenRespuesta
+    {
+        [JsonPropertyName("fechaGlobal")]
+        public string? FechaGlobal { get; set; }
 
-    public class CiudadanoReportadoImagen
+        [JsonPropertyName("novedades")]
+        public bool? Novedades { get; set; } = false;
+
+        [JsonPropertyName("datos")]
+        public List<CiudadanoReportadoImagenDetalleRespuesta> Datos { get; set; } = new();
+    }
+
+    public class CiudadanoReportadoImagenDetalleRespuesta
     {
         [JsonPropertyName("idDatCiudadanoRostro")]
         public long? IdExterno { get; set; }
@@ -57,20 +70,20 @@ namespace ViisionRemolques.Services.Centralia.Endpoints
         [JsonPropertyName("imagenHash")]
         public string? Hash { get; set; }
 
+        [JsonPropertyName("activo")]
+        public bool? Activo { get; set; } = false;
+
         [JsonPropertyName("fechaCreacion")]
-        public DateTime? FechaCreacion { get; set; } = DateTime.Now;
+        public DateTime? FechaCreacion { get; set; }
 
         [JsonPropertyName("fechaModificacion")]
-        public DateTime? FechaModificacion { get; set; } = DateTime.Now;
-
-        [JsonPropertyName("activo")]
-        public bool? Activo { get; set; } = true;
+        public DateTime? FechaModificacion { get; set; }
     }
 
     public class CiudadanoReportadoRespuesta
     {
         [JsonPropertyName("fechaGlobal")]
-        public DateTime? FechaGlobal { get; set; } = DateTime.MinValue;
+        public string? FechaGlobal { get; set; }
 
         [JsonPropertyName("novedades")]
         public bool? Novedades { get; set; } = true;

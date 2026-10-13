@@ -21,20 +21,24 @@ namespace ViisionRemolques.Jobs
         {
             // Descagar ciudadanos reportados
             var syncCiudadanos = await _ciudadanosReportadosService.SincronizarCiudadanosReportados();
-            if (!syncCiudadanos.Exito) syncCiudadanos.LanzarErrorSiFalla();
+            if (!syncCiudadanos.Exito) throw syncCiudadanos.ObtenerExcepcion()!;
 
             // Descargar registros asignados a un ciudadano reportado de imagenes
             var syncCiudadanosImagenes = await _ciudadanosReportadosService.SincronizarCiudadanosReportadosImagenes();
-            if (!syncCiudadanosImagenes.Exito) syncCiudadanosImagenes.LanzarErrorSiFalla();
-
+            if (!syncCiudadanosImagenes.Exito) throw syncCiudadanosImagenes.ObtenerExcepcion()!;
 
             // Procesar la tabla de estado actual de la imagenes
             var syncDiferenciasRostros = await _ciudadanosReportadosService.ProcesarDiferenciasAsync();
-            if (!syncDiferenciasRostros.Exito) syncDiferenciasRostros.LanzarErrorSiFalla();
+            if (!syncDiferenciasRostros.Exito) throw syncDiferenciasRostros.ObtenerExcepcion()!;
+
+            // Verificar integridad contra la cámara: borra huérfanos, marca pendiente lo que la BD
+            // cree sincronizado pero no está en la cámara
+            var integridad = await _fdLibSyncService.VerificarIntegridadAsync();
+            if (!integridad.Exito) throw integridad.ObtenerExcepcion()!;
 
             // Ejecutar batch de operaciones pendientes de imagenes
             var syncDiferenciasRostrosCamara = await _fdLibSyncService.SincronizarAsync();
-            if (!syncDiferenciasRostrosCamara.Exito) syncDiferenciasRostrosCamara.LanzarErrorSiFalla();
+            if (!syncDiferenciasRostrosCamara.Exito) throw syncDiferenciasRostrosCamara.ObtenerExcepcion()!;
         }
     }
 }

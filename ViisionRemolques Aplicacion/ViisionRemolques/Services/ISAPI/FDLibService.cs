@@ -102,7 +102,75 @@ namespace ViisionRemolques.Services.ISAPI
             }
         }
 
-        public record InsertarImagenRequest(string Fdid, string PersonId, string Nombre, byte[] Imagen);
+        public async Task<Resultado<string>> ObtenerCrearFidAsync(
+            CamaraEntity camara,
+            CancellationToken ct = default)
+        {
+            var existente = await IntentarObtenerFDIDLibreriaAsync(camara, ct);
+
+            if (!existente.Exito)
+                return Resultado<string>.Fallo(existente.Error!);
+
+            if (existente.Valor is not null)
+                return Resultado<string>.Ok(existente.Valor);
+
+            return await CrearLibreriaAsync(camara, ct);
+        }
+
+        public async Task<Resultado<string?>> BuscarPorCertificateNumberAsync(
+            CamaraEntity camara,
+            string fdid,
+            string certificateNumber,
+            CancellationToken ct = default)
+        {
+            try
+            {
+                using var client = _isapiClientFactoryService.Crear(camara);
+
+                XNamespace ns = "http://www.hikvision.com/ver20/XMLSchema";
+                var xmlPayload = new XDocument(
+                    new XDeclaration("1.0", "UTF-8", null),
+                    new XElement(ns + "FDSearchDescription",
+                        new XAttribute("version", "2.0"),
+                        new XElement(ns + "searchID", Guid.NewGuid().ToString()),
+                        new XElement(ns + "searchResultPosition", 1),
+                        new XElement(ns + "maxResults", 1),
+                        new XElement(ns + "FDID", fdid),
+                        new XElement(ns + "certificateNumber", certificateNumber)
+                    )
+                );
+
+                var request = new RestRequest("/ISAPI/Intelligent/FDLib/FDSearch", Method.Post);
+                request.AddHeader("Content-Type", "application/xml");
+                request.AddStringBody(xmlPayload.ToString(), DataFormat.Xml);
+
+                var response = await client.ExecuteAsync(request, ct);
+
+                if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+                    return Resultado<string?>.Fallo(
+                        $"Error al buscar el certificateNumber '{certificateNumber}' en la biblioteca {fdid} ({camara.IP}). HTTP {response.StatusCode}.");
+
+                var doc = XDocument.Parse(response.Content);
+
+                var match = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "MatchElement");
+
+                if (match is null)
+                    return Resultado<string?>.Ok(null);
+
+                var pid = match.Elements().FirstOrDefault(e => e.Name.LocalName == "PID")?.Value;
+
+                if (string.IsNullOrWhiteSpace(pid))
+                    return Resultado<string?>.Fallo($"Se encontró coincidencia para '{certificateNumber}' pero la respuesta no contiene <PID>.");
+
+                return Resultado<string?>.Ok(pid);
+            }
+            catch (Exception ex)
+            {
+                return Resultado<string?>.Fallo(ex);
+            }
+        }
+
+        public record InsertarImagenRequest(string Fdid, string CertificateNumber, byte[] Imagen);
 
         public async Task<Resultado<string>> InsertarImagenAsync(
             CamaraEntity camara,
@@ -120,10 +188,9 @@ namespace ViisionRemolques.Services.ISAPI
                         new XAttribute("version", "2.0"),
                         new XElement(ns + "FDID", insertarImagenRequest.Fdid),
                         new XElement(ns + "FaceAppendData",
-                            new XElement(ns + "name", insertarImagenRequest.Nombre),
+                            new XElement(ns + "name", insertarImagenRequest.CertificateNumber),
                             new XElement(ns + "certificateType", "officerID"),
-                            new XElement(ns + "certificateNumber", insertarImagenRequest.PersonId),
-                            new XElement(ns + "customHumanID", insertarImagenRequest.PersonId)
+                            new XElement(ns + "certificateNumber", insertarImagenRequest.CertificateNumber)
                         )
                     )
                 );
@@ -134,7 +201,7 @@ namespace ViisionRemolques.Services.ISAPI
 
                 Write($"--{boundary}\r\nContent-Disposition: form-data; name=\"PictureUploadData\"\r\n\r\n");
                 Write(xmlPayload.ToString());
-                Write($"\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"importImage\"; filename=\"{insertarImagenRequest.PersonId}.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n");
+                Write($"\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"importImage\"; filename=\"{insertarImagenRequest.CertificateNumber}.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n");
                 body.Write(insertarImagenRequest.Imagen);
                 Write($"\r\n--{boundary}--\r\n");
 
@@ -145,13 +212,13 @@ namespace ViisionRemolques.Services.ISAPI
 
                 if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
                     return Resultado<string>.Fallo(
-                         $"Error al subir foto de PersonId {insertarImagenRequest.PersonId} ({camara.IP}). HTTP {response.StatusCode}. {response.Content}");
+                         $"Error al subir foto de certificateNumber {insertarImagenRequest.CertificateNumber} ({camara.IP}). HTTP {response.StatusCode}. {response.Content}");
 
                 var doc = XDocument.Parse(response.Content);
                 var pid = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "PID")?.Value;
 
                 if (string.IsNullOrWhiteSpace(pid))
-                    return Resultado<string>.Fallo($"La foto se subió pero la respuesta no contiene <PID> (PersonId {insertarImagenRequest.PersonId}).");
+                    return Resultado<string>.Fallo($"La foto se subió pero la respuesta no contiene <PID> (certificateNumber {insertarImagenRequest.CertificateNumber}).");
 
                 return Resultado<string>.Ok(pid);
             }
@@ -220,11 +287,11 @@ namespace ViisionRemolques.Services.ISAPI
             }
         }
 
-        public record RegistroFacial(string Pid, string Nombre, string CustomHumanID, string Estado);
+        public record RegistroFacial(string Pid, string Nombre, string CertificateNumber, string Estado);
 
         public async Task<Resultado<IEnumerable<RegistroFacial>>> ConsultarRegistrosAsync(
-            CamaraEntity camara, 
-            string fdid, 
+            CamaraEntity camara,
+            string fdid,
             CancellationToken ct = default)
         {
             try
@@ -232,26 +299,23 @@ namespace ViisionRemolques.Services.ISAPI
                 using var client = _isapiClientFactoryService.Crear(camara);
 
                 var resultado = new List<RegistroFacial>();
+                var posicion = 1;
 
-                foreach (var status in new[] { "success", "failed", "none" })
+                while (true)
                 {
-                    XNamespace ns = "http://www.isapi.org/ver20/XMLSchema";
+                    XNamespace ns = "http://www.hikvision.com/ver20/XMLSchema";
                     var xmlPayload = new XDocument(
                         new XDeclaration("1.0", "UTF-8", null),
-                        new XElement(ns + "FDModelingStatusSearchDescription",
+                        new XElement(ns + "FDSearchDescription",
                             new XAttribute("version", "2.0"),
                             new XElement(ns + "searchID", Guid.NewGuid().ToString()),
-                            new XElement(ns + "searchResultPosition", 1),
-                            new XElement(ns + "maxResults", 500),
-                            new XElement(ns + "CondList",
-                                new XElement(ns + "Cond",
-                                    new XElement(ns + "FDID", fdid)
-                                )
-                            )
+                            new XElement(ns + "searchResultPosition", posicion),
+                            new XElement(ns + "maxResults", 100),
+                            new XElement(ns + "FDID", fdid)
                         )
                     );
 
-                    var request = new RestRequest($"/ISAPI/Intelligent/FDLib/modelingStatus?status={status}", Method.Post);
+                    var request = new RestRequest("/ISAPI/Intelligent/FDLib/FDSearch", Method.Post);
                     request.AddHeader("Content-Type", "application/xml");
                     request.AddStringBody(xmlPayload.ToString(), DataFormat.Xml);
 
@@ -259,18 +323,26 @@ namespace ViisionRemolques.Services.ISAPI
 
                     if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
                         return Resultado<IEnumerable<RegistroFacial>>.Fallo(
-                            $"Error al consultar registros con estado '{status}' de la biblioteca {fdid} ({camara.IP}). HTTP {response.StatusCode}.");
+                            $"Error al consultar registros de la biblioteca {fdid} ({camara.IP}). HTTP {response.StatusCode}.");
 
                     var doc = XDocument.Parse(response.Content);
 
                     resultado.AddRange(doc.Descendants()
-                        .Where(e => e.Name.LocalName == "ModelingStatus")
+                        .Where(e => e.Name.LocalName == "MatchElement")
                         .Select(e => new RegistroFacial(
                             Pid: e.Elements().FirstOrDefault(c => c.Name.LocalName == "PID")?.Value ?? "",
                             Nombre: e.Elements().FirstOrDefault(c => c.Name.LocalName == "name")?.Value ?? "",
-                            CustomHumanID: e.Elements().FirstOrDefault(c => c.Name.LocalName == "customHumanID")?.Value ?? "",
-                            Estado: status
+                            CertificateNumber: e.Elements().FirstOrDefault(c => c.Name.LocalName == "certificateNumber")?.Value ?? "",
+                            Estado: e.Descendants().FirstOrDefault(c => c.Name.LocalName == "status")?.Value ?? ""
                         )));
+
+                    var responseStatusStrg = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "responseStatusStrg")?.Value;
+                    var numOfMatches = int.TryParse(doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "numOfMatches")?.Value, out var n) ? n : 0;
+
+                    if (numOfMatches == 0 || !string.Equals(responseStatusStrg, "MORE", StringComparison.OrdinalIgnoreCase))
+                        break;
+
+                    posicion += numOfMatches;
                 }
 
                 return Resultado<IEnumerable<RegistroFacial>>.Ok(resultado);

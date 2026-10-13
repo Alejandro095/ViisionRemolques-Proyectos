@@ -64,9 +64,9 @@ namespace ViisionRemolques.Repositories
             return await EjecutarCargaMasivaAsync("CiudadanosReportados", dataTable);
         }
 
-        public async Task<Resultado> ActualizarImagenes(List<CiudadanoReportadoImagen> ciudadanosReportadosImagenes)
+        public async Task<Resultado> ActualizarImagenes(List<CiudadanoReportadoImagenDetalleRespuesta>? ciudadanosReportadosImagenes)
         {
-            ciudadanosReportadosImagenes ??= new List<CiudadanoReportadoImagen>();
+            ciudadanosReportadosImagenes ??= new List<CiudadanoReportadoImagenDetalleRespuesta>();
 
             using var dataTable = new DataTable();
             dataTable.Columns.Add("IdExterno", typeof(long));

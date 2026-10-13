@@ -48,10 +48,6 @@
 
             return new Exception(Error ?? "Ocurrió un error desconocido.");
         }
-        public void LanzarErrorSiFalla()
-        {
-            if (!Exito) throw ObtenerExcepcion()!;
-        }
     }
 
     public readonly struct Resultado
@@ -93,10 +89,6 @@
             if (Excepcion != null) return Excepcion;
 
             return new Exception(Error ?? "Ocurrió un error desconocido.");
-        }
-        public void LanzarErrorSiFalla()
-        {
-            if (!Exito) throw ObtenerExcepcion()!;
         }
     }
 }
