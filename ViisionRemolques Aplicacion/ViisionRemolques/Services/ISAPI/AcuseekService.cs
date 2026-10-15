@@ -7,12 +7,6 @@ using ViisionRemolques.Utils;
 
 namespace ViisionRemolques.Services.ISAPI
 {
-    /// <summary>
-    /// Cliente ISAPI para el módulo AcuSeek (búsqueda semántica de video) del MVR.
-    /// Nota de firmware: los endpoints bajo /ISAPI/ContentMgmt/* solo aceptan XML
-    /// (?format=json rompe con "Invalid XML Content/Format"); los de /ISAPI/Intelligent/*
-    /// y /ISAPI/System/* sí aceptan JSON con ?format=json. Verificado contra el MVR real.
-    /// </summary>
     public class AcuseekService
     {
         private readonly IsapiClientFactoryService _isapiClientFactoryService;
@@ -24,11 +18,13 @@ namespace ViisionRemolques.Services.ISAPI
             _mvrSettings = mvrSettings.Value;
         }
 
+        private RestClient CrearCliente() => _isapiClientFactoryService.Crear(_mvrSettings.IP, _mvrSettings.Usuario, _mvrSettings.Secreto);
+
         public async Task<Resultado<(DateTime Hora, string Offset)>> ObtenerHoraDispositivoAsync(CancellationToken ct = default)
         {
             try
             {
-                using var client = Crear();
+                using var client = CrearCliente();
                 var request = new RestRequest("/ISAPI/System/time", Method.Get);
                 var response = await client.ExecuteAsync(request, ct);
 
@@ -60,7 +56,7 @@ namespace ViisionRemolques.Services.ISAPI
         {
             try
             {
-                using var client = Crear();
+                using var client = CrearCliente();
                 // Este endpoint rechaza ?format=json en este firmware; responde XML siempre.
                 var request = new RestRequest("/ISAPI/ContentMgmt/InputProxy/channels", Method.Get);
                 var response = await client.ExecuteAsync(request, ct);
@@ -89,11 +85,11 @@ namespace ViisionRemolques.Services.ISAPI
         }
 
         public async Task<Resultado<string>> IniciarBusquedaTextoAsync(
-            string texto, string startTime, string endTime, int[] canales, int similarity, string? idioma, CancellationToken ct = default)
+            string texto, string startTime, string endTime, int[] canales, int similarity, CancellationToken ct = default)
         {
             try
             {
-                using var client = Crear();
+                using var client = CrearCliente();
 
                 var payload = new
                 {
@@ -101,7 +97,7 @@ namespace ViisionRemolques.Services.ISAPI
                     endTime,
                     channelList = canales,
                     text = texto.Trim(),
-                    language = string.IsNullOrWhiteSpace(idioma) ? "English" : idioma,
+                    language = "Spanish",
                     similarity = Math.Clamp(similarity <= 0 ? 60 : similarity, 0, 100)
                 };
 
@@ -125,13 +121,12 @@ namespace ViisionRemolques.Services.ISAPI
             }
         }
 
-        /// <summary>Devuelve el JSON crudo del MVR (matchResults incluye filePath de imágenes sin proxear).</summary>
         public async Task<Resultado<string>> ObtenerEstadoBusquedaAsync(
             string taskId, int searchResultPosition, int maxResults, int similarity, CancellationToken ct = default)
         {
             try
             {
-                using var client = Crear();
+                using var client = CrearCliente();
 
                 var payload = new
                 {
@@ -161,7 +156,7 @@ namespace ViisionRemolques.Services.ISAPI
         {
             try
             {
-                using var client = Crear();
+                using var client = CrearCliente();
 
                 var request = new RestRequest("/ISAPI/ContentMgmt/DeleteAsynSearchByTextTask?format=json", Method.Post);
                 request.AddJsonBody(new { taskID = taskId });
@@ -183,7 +178,7 @@ namespace ViisionRemolques.Services.ISAPI
         {
             try
             {
-                using var client = Crear();
+                using var client = CrearCliente();
                 var request = new RestRequest("/ISAPI/Intelligent/AcuSeek/GetHistoricalTerms?format=json", Method.Get);
                 var response = await client.ExecuteAsync(request, ct);
 
@@ -214,7 +209,7 @@ namespace ViisionRemolques.Services.ISAPI
         {
             try
             {
-                using var client = Crear();
+                using var client = CrearCliente();
                 var request = new RestRequest("/ISAPI/Intelligent/AcuSeek/GetCollectTerms?format=json", Method.Post);
                 request.AddJsonBody(new { });
 
@@ -247,12 +242,11 @@ namespace ViisionRemolques.Services.ISAPI
             }
         }
 
-        /// <summary>collectStatus: 1 = agregar, 2 = quitar.</summary>
         public async Task<Resultado> EstablecerFavoritoAsync(string terminos, bool agregar, CancellationToken ct = default)
         {
             try
             {
-                using var client = Crear();
+                using var client = CrearCliente();
                 var request = new RestRequest("/ISAPI/Intelligent/AcuSeek/CollectTerms?format=json", Method.Post);
                 request.AddJsonBody(new { terms = terminos, collectStatus = agregar ? 1 : 2 });
 
@@ -270,17 +264,17 @@ namespace ViisionRemolques.Services.ISAPI
         }
 
         public async Task<Resultado<string>> EnviarTuningAsync(
-            string texto, string[] positivas, string[] negativas, string? idioma, CancellationToken ct = default)
+            string texto, string[] positivas, string[] negativas, CancellationToken ct = default)
         {
             try
             {
-                using var client = Crear();
+                using var client = CrearCliente();
 
                 var payload = new
                 {
                     type = "text",
                     text = texto,
-                    language = string.IsNullOrWhiteSpace(idioma) ? "English" : idioma,
+                    language = "Spanish",
                     positiveImageList = positivas,
                     negativeImageList = negativas
                 };
@@ -304,12 +298,11 @@ namespace ViisionRemolques.Services.ISAPI
             }
         }
 
-        /// <summary>Devuelve el JSON crudo con matchResults[0].{percent, fineTuningStatus}.</summary>
         public async Task<Resultado<string>> ObtenerEstadoTuningAsync(string texto, CancellationToken ct = default)
         {
             try
             {
-                using var client = Crear();
+                using var client = CrearCliente();
 
                 var payload = new
                 {
@@ -335,16 +328,17 @@ namespace ViisionRemolques.Services.ISAPI
             }
         }
 
-        /// <summary>Descarga una imagen/snapshot (filePath absoluto del MVR) autenticada por Digest.</summary>
-        public async Task<Resultado<(byte[] Bytes, string ContentType)>> ObtenerImagenAsync(string url, CancellationToken ct = default)
+        public async Task<Resultado<(byte[] Bytes, string ContentType)>> ObtenerImagenAsync(string track, string name, string size, CancellationToken ct = default)
         {
             try
             {
-                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Host != _mvrSettings.IP)
-                    return Resultado<(byte[], string)>.Fallo("La URL de la imagen no pertenece al MVR configurado.");
+                var url = $"http://{_mvrSettings.IP}:80/picture/Streaming/tracks/{track}/?name={name}&size={size}";
 
-                using var client = Crear();
-                var request = new RestRequest(uri, Method.Get);
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Host != _mvrSettings.IP)
+                    return Resultado<(byte[], string)>.Fallo("Los parametros son invalidos.");
+
+                using var client = CrearCliente();
+                var request = new RestRequest(url, Method.Get);
                 var response = await client.ExecuteAsync(request, ct);
 
                 if (!response.IsSuccessful || response.RawBytes is null || response.RawBytes.Length == 0)
@@ -359,10 +353,6 @@ namespace ViisionRemolques.Services.ISAPI
             }
         }
 
-        private RestClient Crear() =>
-            _isapiClientFactoryService.Crear(_mvrSettings.IP, _mvrSettings.Usuario, _mvrSettings.Secreto);
-
-        /// <summary>El sobre estándar de ISAPI usa errorCode:1/errorMsg:"ok" para ÉXITO (no es un error).</summary>
         private static Resultado ValidarSobreEstandar(string json)
         {
             using var doc = JsonDocument.Parse(json);
