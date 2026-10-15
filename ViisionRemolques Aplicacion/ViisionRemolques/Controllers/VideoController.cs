@@ -61,8 +61,6 @@ namespace ViisionRemolques.Controllers
 
             var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-            var streamUrl = $"{Request.Scheme}://{Request.Host}/v1/api/video/streaming/stream.html?token={tokenString}";
-
             return Ok(new
             {
                 Id = camara.IdInterno,
@@ -73,7 +71,7 @@ namespace ViisionRemolques.Controllers
                     expiraEn = 300,
                 },
                 
-                streamUrl = streamUrl,
+                path = $"/v1/api/video/streaming/stream.html?token={tokenString}",
             });
         }
     }

@@ -55,7 +55,7 @@ namespace ViisionRemolques.Auth.YARP
                         httpContext.Response.Cookies.Append(VideoSessionCookieName, cameraSrc, new CookieOptions
                         {
                             HttpOnly = true,
-                            Secure = true,
+                            Secure = httpContext.Request.IsHttps,
                             SameSite = SameSiteMode.Lax,
                             Expires = DateTimeOffset.UtcNow.AddMinutes(5)
                         });
