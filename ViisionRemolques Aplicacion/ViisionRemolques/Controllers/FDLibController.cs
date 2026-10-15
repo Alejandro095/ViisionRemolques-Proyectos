@@ -5,6 +5,24 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ViisionRemolques.Controllers
 {
+    /// <summary>
+    /// Gestión de librerías de rostros (FDLib) de las cámaras: creación de la librería, alta y baja de imágenes,
+    /// modelado de los rostros pendientes y consulta de los registros existentes.
+    /// </summary>
+    /// <remarks>
+    /// Controlador deshabilitado: todas sus acciones están comentadas y no se expone ningún endpoint, por lo que
+    /// este grupo no aparece en la documentación de la API. La sincronización de rostros se realiza actualmente
+    /// mediante el trabajo recurrente de Hangfire <c>sincronizador-personas-rostros-blacklist</c>, que utiliza
+    /// directamente <c>FDLibService</c> y <c>FDLibSyncService</c>.
+    ///
+    /// Limitaciones conocidas de la implementación comentada, a tener en cuenta si se reactiva:
+    /// - Operaba siempre contra una única cámara fijada en código (la de id interno 1), no contra la cámara
+    ///   indicada por el cliente.
+    /// - Incluía un endpoint de benchmark que insertaba la misma imagen de forma masiva y paralela en el
+    ///   dispositivo; no es apto para producción.
+    /// - El alta de imágenes requiere ejecutar después el modelado de los rostros pendientes para que la cámara
+    ///   los reconozca.
+    /// </remarks>
     [ApiController]
     [Route("fdlib")]
     public class FDLibController : Controller

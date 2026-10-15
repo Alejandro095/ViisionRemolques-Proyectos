@@ -10,6 +10,7 @@ using System.Text;
 using ViisionRemolques;
 using ViisionRemolques.Auth.YARP;
 using ViisionRemolques.Jobs;
+using ViisionRemolques.OpenApi;
 using ViisionRemolques.Services.Centralia;
 using ViisionRemolques.Settings;
 
@@ -57,7 +58,8 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddControllers();
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+    options.AddDocumentTransformer<ControllerTagDescriptionsTransformer>());
 
 builder.Services.AddHealthChecks();
 
