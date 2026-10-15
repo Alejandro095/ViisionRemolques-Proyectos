@@ -80,5 +80,45 @@ namespace ViisionRemolques.Repositories.Eventos
                 throw;
             }
         }
+
+        public async Task<List<EventoEntity<EventoRecuentoPersonasEntity>>> ObtenerPendientesAsync()
+        {
+            const string sql = @"
+                SELECT
+                    e.IdInterno AS EventoIdInterno,
+                    e.CamaraIP,
+                    e.CamaraMAC,
+                    e.VCA,
+                    e.Evento,
+                    e.Prioridad,
+                    e.Payload,
+                    e.FechaEvento,
+                    d.TodasRegionesEntradas,
+                    d.TodasRegionesSalidas,
+                    d.TodasRegionesTranseuntes,
+                    d.TodasRegionesDuplicados,
+                    d.RegionId,
+                    d.RegionEntradas,
+                    d.RegionSalidas,
+                    d.RegionTranseuntes
+                FROM dbo.Eventos e
+                INNER JOIN dbo.EventoDetallesRecuentoPersonas d ON d.EventoIdInterno = e.IdInterno
+                WHERE e.IdExterno IS NULL
+                ORDER BY e.IdInterno;";
+
+            return await ObtenerPendientesBaseAsync<EventoRecuentoPersonasEntity>(sql, splitOn: "TodasRegionesEntradas");
+        }
+    }
+
+    public class EventoRecuentoPersonasEntity
+    {
+        public string? TodasRegionesEntradas { get; set; }
+        public string? TodasRegionesSalidas { get; set; }
+        public string? TodasRegionesTranseuntes { get; set; }
+        public string? TodasRegionesDuplicados { get; set; }
+        public string? RegionId { get; set; }
+        public string? RegionEntradas { get; set; }
+        public string? RegionSalidas { get; set; }
+        public string? RegionTranseuntes { get; set; }
     }
 }

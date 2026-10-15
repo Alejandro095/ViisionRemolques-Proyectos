@@ -86,5 +86,49 @@ namespace ViisionRemolques.Repositories.Eventos
                 throw;
             }
         }
+
+        public async Task<List<EventoEntity<EventoAlarmaRecuentoPersonasEntity>>> ObtenerPendientesAsync()
+        {
+            const string sql = @"
+                SELECT
+                    e.IdInterno AS EventoIdInterno,
+                    e.CamaraIP,
+                    e.CamaraMAC,
+                    e.VCA,
+                    e.Evento,
+                    e.Prioridad,
+                    e.Payload,
+                    e.FechaEvento,
+                    d.ObjetivoDetectadoTipo,
+                    d.Algoritmo,
+                    d.RegionId,
+                    d.RegionCoordenadas,
+                    d.ValorCausaEvento,
+                    d.OperadorCausaEvento,
+                    d.CantidadPersonas,
+                    d.NivelDensidad,
+                    d.NombreNivelDensidad,
+                    d.DireccionCambioDensidad
+                FROM dbo.Eventos e
+                INNER JOIN dbo.EventoDetallesAlarmaRecuentoPersonas d ON d.EventoIdInterno = e.IdInterno
+                WHERE e.IdExterno IS NULL
+                ORDER BY e.IdInterno;";
+
+            return await ObtenerPendientesBaseAsync<EventoAlarmaRecuentoPersonasEntity>(sql, splitOn: "ObjetivoDetectadoTipo");
+        }
+    }
+
+    public class EventoAlarmaRecuentoPersonasEntity
+    {
+        public string? ObjetivoDetectadoTipo { get; set; }
+        public string? Algoritmo { get; set; }
+        public string? RegionId { get; set; }
+        public string? RegionCoordenadas { get; set; }
+        public string? ValorCausaEvento { get; set; }
+        public string? OperadorCausaEvento { get; set; }
+        public string? CantidadPersonas { get; set; }
+        public string? NivelDensidad { get; set; }
+        public string? NombreNivelDensidad { get; set; }
+        public string? DireccionCambioDensidad { get; set; }
     }
 }

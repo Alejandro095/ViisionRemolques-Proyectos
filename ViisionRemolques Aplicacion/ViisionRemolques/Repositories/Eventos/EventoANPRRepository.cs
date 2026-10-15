@@ -86,5 +86,49 @@ namespace ViisionRemolques.Repositories.Eventos
                 throw;
             }
         }
+
+        public async Task<List<EventoEntity<EventoANPREntity>>> ObtenerPendientesAsync()
+        {
+            const string sql = @"
+                SELECT
+                    e.IdInterno AS EventoIdInterno,
+                    e.CamaraIP,
+                    e.CamaraMAC,
+                    e.VCA,
+                    e.Evento,
+                    e.Prioridad,
+                    e.Payload,
+                    e.FechaEvento,
+                    d.Matricula,
+                    d.VehiculoDosRuedas,
+                    d.VehiculoTresRuedas,
+                    d.VehiculoTipo,
+                    d.VehiculoColor,
+                    d.Direccion,
+                    d.NumeroCarril,
+                    d.NombreLista,
+                    d.Radar,
+                    d.Velocidad
+                FROM dbo.Eventos e
+                INNER JOIN dbo.EventoDetallesANPR d ON d.EventoIdInterno = e.IdInterno
+                WHERE e.IdExterno IS NULL
+                ORDER BY e.IdInterno;";
+
+            return await ObtenerPendientesBaseAsync<EventoANPREntity>(sql, splitOn: "Matricula");
+        }
+    }
+
+    public class EventoANPREntity
+    {
+        public string? Matricula { get; set; }
+        public string? VehiculoDosRuedas { get; set; }
+        public string? VehiculoTresRuedas { get; set; }
+        public string? VehiculoTipo { get; set; }
+        public string? VehiculoColor { get; set; }
+        public string? Direccion { get; set; }
+        public string? NumeroCarril { get; set; }
+        public string? NombreLista { get; set; }
+        public bool Radar { get; set; }
+        public string? Velocidad { get; set; }
     }
 }

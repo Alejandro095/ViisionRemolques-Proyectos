@@ -82,5 +82,47 @@ namespace ViisionRemolques.Repositories.Eventos
                 throw;
             }
         }
+
+        public async Task<List<EventoEntity<EventoArmadoPistaPersonaEntity>>> ObtenerPendientesAsync()
+        {
+            const string sql = @"
+                SELECT
+                    e.IdInterno AS EventoIdInterno,
+                    e.CamaraIP,
+                    e.CamaraMAC,
+                    e.VCA,
+                    e.Evento,
+                    e.Prioridad,
+                    e.Payload,
+                    e.FechaEvento,
+                    d.Edad,
+                    d.GrupoEdad,
+                    d.Genero,
+                    d.Lentes,
+                    d.Mascara,
+                    d.ExpresionFacial,
+                    d.Sombrero,
+                    d.DeteccionFacial,
+                    d.DeteccionFacialId
+                FROM dbo.Eventos e
+                INNER JOIN dbo.EventoDetallesArmadoPistaPersona d ON d.EventoIdInterno = e.IdInterno
+                WHERE e.IdExterno IS NULL
+                ORDER BY e.IdInterno;";
+
+            return await ObtenerPendientesBaseAsync<EventoArmadoPistaPersonaEntity>(sql, splitOn: "Edad");
+        }
+    }
+
+    public class EventoArmadoPistaPersonaEntity
+    {
+        public string? Edad { get; set; }
+        public string? GrupoEdad { get; set; }
+        public string? Genero { get; set; }
+        public string? Lentes { get; set; }
+        public string? Mascara { get; set; }
+        public string? ExpresionFacial { get; set; }
+        public string? Sombrero { get; set; }
+        public bool DeteccionFacial { get; set; }
+        public string? DeteccionFacialId { get; set; }
     }
 }

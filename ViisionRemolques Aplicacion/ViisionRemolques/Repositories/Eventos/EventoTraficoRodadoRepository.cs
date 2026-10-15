@@ -73,5 +73,41 @@ namespace ViisionRemolques.Repositories.Eventos
                 throw;
             }
         }
+
+        public async Task<List<EventoEntity<EventoTraficoRodadoEntity>>> ObtenerPendientesAsync()
+        {
+            const string sql = @"
+                SELECT
+                    e.IdInterno AS EventoIdInterno,
+                    e.CamaraIP,
+                    e.CamaraMAC,
+                    e.VCA,
+                    e.Evento,
+                    e.Prioridad,
+                    e.Payload,
+                    e.FechaEvento,
+                    d.VehiculosTotal,
+                    d.VehiculosFlujoAscendente,
+                    d.VehiculosFlujoDescendente,
+                    d.MotocicletasTotal,
+                    d.MotocicletasFlujoAscendente,
+                    d.MotocicletasFlujoDescendente
+                FROM dbo.Eventos e
+                INNER JOIN dbo.EventoDetallesTraficoRodado d ON d.EventoIdInterno = e.IdInterno
+                WHERE e.IdExterno IS NULL
+                ORDER BY e.IdInterno;";
+
+            return await ObtenerPendientesBaseAsync<EventoTraficoRodadoEntity>(sql, splitOn: "VehiculosTotal");
+        }
+    }
+
+    public class EventoTraficoRodadoEntity
+    {
+        public int? VehiculosTotal { get; set; }
+        public int? VehiculosFlujoAscendente { get; set; }
+        public int? VehiculosFlujoDescendente { get; set; }
+        public int? MotocicletasTotal { get; set; }
+        public int? MotocicletasFlujoAscendente { get; set; }
+        public int? MotocicletasFlujoDescendente { get; set; }
     }
 }

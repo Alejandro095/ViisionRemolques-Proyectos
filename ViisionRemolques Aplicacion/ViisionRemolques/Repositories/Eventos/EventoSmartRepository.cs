@@ -65,5 +65,35 @@ namespace ViisionRemolques.Repositories.Eventos
                 throw;
             }
         }
+
+        public async Task<List<EventoEntity<EventoSmartEntity>>> ObtenerPendientesAsync()
+        {
+            const string sql = @"
+                SELECT
+                    e.IdInterno AS EventoIdInterno,
+                    e.CamaraIP,
+                    e.CamaraMAC,
+                    e.VCA,
+                    e.Evento,
+                    e.Prioridad,
+                    e.Payload,
+                    e.FechaEvento,
+                    d.RegionId,
+                    d.ObjetivoDetectadoTipo,
+                    d.RegionCoordenadas
+                FROM dbo.Eventos e
+                INNER JOIN dbo.EventoDetallesSmart d ON d.EventoIdInterno = e.IdInterno
+                WHERE e.IdExterno IS NULL
+                ORDER BY e.IdInterno;";
+
+            return await ObtenerPendientesBaseAsync<EventoSmartEntity>(sql, splitOn: "RegionId");
+        }
+    }
+
+    public class EventoSmartEntity
+    {
+        public string? RegionId { get; set; }
+        public string? ObjetivoDetectadoTipo { get; set; }
+        public string? RegionCoordenadas { get; set; }
     }
 }
