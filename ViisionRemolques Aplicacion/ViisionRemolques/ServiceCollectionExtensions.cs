@@ -43,6 +43,8 @@ namespace ViisionRemolques
             services.AddScoped<CiudadanosRepository>();
             services.AddScoped<CatalogosVersionesRepository>();
 
+            services.AddScoped<SensoresRepository>();
+
             return services;
         }
 

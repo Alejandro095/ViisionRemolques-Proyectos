@@ -5,6 +5,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	<!-- CS1591: no exigir comentarios XML en todo lo publico (entities, repositorios, settings).
+	     La documentacion se mantiene de forma deliberada en los controladores, que es la que
+	     alimenta OpenAPI y Scalar. -->
+	<NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
