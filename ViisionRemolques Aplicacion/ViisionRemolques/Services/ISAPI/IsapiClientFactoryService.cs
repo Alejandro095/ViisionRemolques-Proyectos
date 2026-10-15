@@ -23,7 +23,18 @@ namespace ViisionRemolques.Services.ISAPI
             if (string.IsNullOrWhiteSpace(camara.DigestUsuario) || string.IsNullOrWhiteSpace(camara.DigestContrasena))
                 throw new InvalidOperationException($"La cámara '{camara.Nombre}' no tiene configuradas credenciales Digest.");
 
-            var baseUrl = $"http://{camara.IP}";
+            return Crear(camara.IP, camara.DigestUsuario, camara.DigestContrasena);
+        }
+
+        public RestClient Crear(string ip, string usuario, string secreto)
+        {
+            if (string.IsNullOrWhiteSpace(ip))
+                throw new InvalidOperationException("No se especificó la IP del dispositivo.");
+
+            if (string.IsNullOrWhiteSpace(usuario) || string.IsNullOrWhiteSpace(secreto))
+                throw new InvalidOperationException("No se configuraron credenciales Digest para el dispositivo.");
+
+            var baseUrl = $"http://{ip}";
 
             var httpClient = _httpClientFactory.CreateClient("IsapiCameraClient");
 
@@ -31,7 +42,7 @@ namespace ViisionRemolques.Services.ISAPI
 
             return new RestClient(httpClient, new RestClientOptions(baseUrl)
             {
-                Authenticator = new DigestAuthenticator(camara.DigestUsuario, camara.DigestContrasena)
+                Authenticator = new DigestAuthenticator(usuario, secreto)
             });
         }
     }

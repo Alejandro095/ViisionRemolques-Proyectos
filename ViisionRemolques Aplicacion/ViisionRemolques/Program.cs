@@ -31,6 +31,16 @@ builder.Services.AddOptions<PathsSettings>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services.AddOptions<MvrSettings>()
+    .Bind(builder.Configuration.GetSection("MVR"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddOptions<JwtSettings>()
+    .Bind(builder.Configuration.GetSection("Jwt"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddHttpClient("IsapiCameraClient")
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {
@@ -64,6 +74,9 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
+    ?? throw new InvalidOperationException("La sección 'Jwt' no está configurada.");
+
 builder.Services.AddAuthentication(options =>
 {
     // Esquema predeterminado global (JWT)
@@ -78,9 +91,9 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key))
     };
 
     options.Events = new JwtBearerEvents
@@ -137,11 +150,11 @@ app.UseStatusCodePages();
 
 app.UsePathBase("/v1/api");
 
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.MapOpenApi();
     app.MapScalarApiReference();
-}
+//}
 
 app.UseHangfireDashboard("/hangfire");
 

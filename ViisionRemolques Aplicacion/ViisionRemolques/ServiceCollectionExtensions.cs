@@ -64,6 +64,8 @@ namespace ViisionRemolques
 
             services.AddTransient<HeatmapService>();
             services.AddTransient<InterseccionesService>();
+            services.AddTransient<MvrService>();
+            services.AddTransient<AcuseekService>();
 
             services.AddSingleton<AlmacenamientoService>();
             services.AddTransient<WebhookPayloadExtractorService>();

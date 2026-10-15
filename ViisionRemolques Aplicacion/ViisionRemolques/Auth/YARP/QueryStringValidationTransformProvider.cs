@@ -3,7 +3,9 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using ViisionRemolques.Settings;
 using Yarp.ReverseProxy.Transforms;
 using Yarp.ReverseProxy.Transforms.Builder;
 
@@ -12,12 +14,14 @@ namespace ViisionRemolques.Auth.YARP
     public class QueryStringValidationTransformProvider : ITransformProvider
     {
         private static readonly JwtSecurityTokenHandler _tokenHandler = new();
-        private readonly IConfiguration _configuration;
+        private readonly MvrSettings _mvrSettings;
+        private readonly JwtSettings _jwtSettings;
         private const string VideoSessionCookieName = "video_session_src";
 
-        public QueryStringValidationTransformProvider(IConfiguration configuration)
+        public QueryStringValidationTransformProvider(IOptions<MvrSettings> mvrSettings, IOptions<JwtSettings> jwtSettings)
         {
-            _configuration = configuration;
+            _mvrSettings = mvrSettings.Value;
+            _jwtSettings = jwtSettings.Value;
         }
 
         public void ValidateRoute(TransformRouteValidationContext context) { }
@@ -41,7 +45,7 @@ namespace ViisionRemolques.Auth.YARP
                     // 1. Validar por Token JWT (Primera petición)
                     if (!string.IsNullOrWhiteSpace(token))
                     {
-                        cameraSrc = ExtraerCamaraDelToken(token);
+                        cameraSrc = ExtraerSrcDelToken(token);
 
                         if (string.IsNullOrEmpty(cameraSrc))
                         {
@@ -81,18 +85,18 @@ namespace ViisionRemolques.Auth.YARP
             });
         }
 
-        private string? ExtraerCamaraDelToken(string token)
+        private string? ExtraerSrcDelToken(string token)
         {
             try
             {
-                var keyBytes = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!);
+                var keyBytes = Encoding.UTF8.GetBytes(_jwtSettings.Key);
 
                 var validationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
                     ValidateIssuer = true,
-                    ValidIssuer = _configuration["Jwt:Issuer"],
+                    ValidIssuer = _jwtSettings.Issuer,
                     ValidateAudience = false,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromSeconds(10)
@@ -101,17 +105,53 @@ namespace ViisionRemolques.Auth.YARP
                 // Validar firma y vigencia del JWT
                 var principal = _tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
 
-                // Extraer el claim "src" o "allowed_camera"
-                var srcClaim = principal.FindFirst("src")?.Value
-                            ?? principal.FindFirst("allowed_camera")?.Value;
+                var scope = principal.FindFirst("scope")?.Value;
 
-                return srcClaim;
+                // Clip grabado del MVR: el token solo lleva canal + ventana de tiempo;
+                // la URL RTSP (con credenciales del MVR) se arma aquí, nunca llega al cliente.
+                if (scope == "video_clip")
+                    return ConstruirSrcClipMVR(principal);
+
+                // Streaming en vivo: el claim ya trae el nombre del stream go2rtc.
+                return principal.FindFirst("src")?.Value
+                    ?? principal.FindFirst("allowed_camera")?.Value;
             }
             catch
             {
                 // Firma inválida, token expirado o malformado
                 return null;
             }
+        }
+
+        private string? ConstruirSrcClipMVR(ClaimsPrincipal principal)
+        {
+            var canalClaim = principal.FindFirst("mvr_canal")?.Value;
+            var inicio = principal.FindFirst("mvr_inicio")?.Value;
+            var fin = principal.FindFirst("mvr_fin")?.Value;
+
+            if (string.IsNullOrWhiteSpace(canalClaim) || string.IsNullOrWhiteSpace(inicio) || string.IsNullOrWhiteSpace(fin))
+                return null;
+
+            if (!int.TryParse(canalClaim, out var canal) || canal <= 0)
+                return null;
+
+            var ip = _mvrSettings.IP;
+            var usuario = _mvrSettings.Usuario;
+            var secreto = _mvrSettings.Secreto;
+            var puerto = _mvrSettings.RtspPort;
+
+            if (string.IsNullOrWhiteSpace(ip) || string.IsNullOrWhiteSpace(usuario) || string.IsNullOrWhiteSpace(secreto))
+                return null;
+
+            // Pista de video principal del canal: id*100+1 (convención ISAPI de Hikvision).
+            var trackId = canal * 100 + 1;
+            var user = Uri.EscapeDataString(usuario);
+            var pass = Uri.EscapeDataString(secreto);
+            var rtsp = $"rtsp://{user}:{pass}@{ip}:{puerto}/Streaming/tracks/{trackId}?starttime={inicio}&endtime={fin}";
+
+            // El RTSP de grabación del MVR trae timestamps que atascan el jitter buffer del
+            // navegador; enrutar por ffmpeg regenera los PTS.
+            return $"ffmpeg:{rtsp}#video=h264";
         }
     }
 }
