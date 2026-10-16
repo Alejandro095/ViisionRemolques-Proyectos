@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Text.Json.Nodes;
@@ -339,7 +340,7 @@ namespace ViisionRemolques.Controllers
             if (!resultado.Exito)
                 return ErrorMvr(resultado.Error);
 
-            var nodoRaiz = JsonNode.Parse(resultado.Valor ?? "");
+            var nodoRaiz = JObject.Parse(resultado.Valor ?? "{}");
 
             string? ParsearPath(string? path)
             {
@@ -379,7 +380,7 @@ namespace ViisionRemolques.Controllers
                 Progress = (int?)nodoRaiz?["progress"],
 
                 Resultados = nodoRaiz?["matchResults"] != null
-                    ? nodoRaiz["matchResults"]!.AsArray().Select(m => new
+                    ? nodoRaiz["matchResults"]!.Select(m => new
                     {
                         Id = (int?)m?["id"],
                         Fecha = (string?)m?["time"],
