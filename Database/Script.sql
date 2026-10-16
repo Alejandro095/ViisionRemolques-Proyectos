@@ -496,3 +496,40 @@ CREATE TABLE FDLibSyncState (
     FechaActualizacion   DATETIME2 NOT NULL DEFAULT GETDATE()
 );
 
+CREATE TABLE SensoresMainLog (
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    GatewayId                           UNIQUEIDENTIFIER NULL,
+    LogId                               INT NULL,
+    LogType                             NVARCHAR(100) NULL,
+    DeviceId                            INT NULL,
+    DeviceName                          NVARCHAR(250) NULL,
+    DeviceType                          NVARCHAR(100) NULL,
+    EventType                           NVARCHAR(100) NULL,
+    Description                         NVARCHAR(MAX) NULL,
+    NumericValue                        DECIMAL(18, 4) NULL,
+    Unit                                NVARCHAR(50) NULL,
+    BooleanValue                        BIT NULL,
+    RecordedAt                          DATETIME2(7) NULL,
+    Sincronizado                        BIT NOT NULL DEFAULT 0
+);
+GO
+
+CREATE TABLE SensoresLogAlert (
+    IdInterno                           BIGINT IDENTITY (1,1) PRIMARY KEY CLUSTERED,
+    GatewayId                           UNIQUEIDENTIFIER NULL,
+    AlertId                             INT NULL,
+    AlertName                           NVARCHAR(250) NULL,
+    LogType                             NVARCHAR(100) NULL,
+    LogId                               INT NULL,
+    DeviceId                            INT NULL,
+    ConfigAlertId                       INT NULL,
+    AlertType                           NVARCHAR(100) NULL,
+    ConfigName                          NVARCHAR(250) NULL,
+    ConfigDescription                   NVARCHAR(MAX) NULL,
+    ThresholdValue                      DECIMAL(18, 4) NULL,
+    MeasuredValue                       DECIMAL(18, 4) NULL,
+    Unit                                NVARCHAR(50) NULL,
+    CreatedAt                           DATETIME2(7) NULL,
+    Sincronizado                        BIT NOT NULL DEFAULT 0
+);
+GO
